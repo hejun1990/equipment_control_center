@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+	<property name="app.name" value="equipment_management"/>
+
+	<!-- 业务日志路径-->
+	<property name="logging.path" value="${LOG_PATH}"/>
+	<!-- 系统日志路径-->
+	<property name="system.log" value="system"/>
+	<!-- 日志保存时间(天) -->
+	<property name="log.save.time.day" value="30"/>
+
+	<!-- 输出到控制台 -->
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<Pattern>%date{yyyy-MM-dd HH:mm:ss.SSS}\t[%thread]\t%-5level\t%logger\t-\t%X{KEY_WORDS}%m%n</Pattern>
+			<charset class="java.nio.charset.Charset">utf-8</charset>
+		</encoder>
+	</appender>
+
+	<!-- 以前的方式 打印INFO以上全量日志 按大小滚动 -->
+	<appender name="COMMON-ALL-APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>INFO</level>
+		</filter>
+		<encoder>
+			<pattern>%date{yyyy-MM-dd HH:mm:ss.SSS}\t[%thread]\t%-5level\t%logger\t-\t%X{KEY_WORDS}%msg%n</pattern>
+			<charset>UTF-8</charset>
+		</encoder>
+		<file>${logging.path}/${app.name}.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${logging.path}/${app.name}.log.%d{yyyy-MM-dd}-%i</fileNamePattern>
+			<TimeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<MaxFileSize>40MB</MaxFileSize>
+			</TimeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+	</appender>
+
+	<!-- 只打印 ERROR 日志 标准 APPENDER -->
+	<appender name="COMMON-ERROR-APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>ERROR</level>
+		</filter>
+		<encoder>
+			<Pattern>%date{yyyy-MM-dd HH:mm:ss.SSS}\t[%thread]\t%-5level\t%logger\t-\t%X{KEY_WORDS}%msg%n</Pattern>
+			<charset class="java.nio.charset.Charset">utf-8</charset>
+		</encoder>
+		<file>${logging.path}/${app.name}.common-error.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${logging.path}/${app.name}.common-error.log.%d{yyyy-MM-dd}</FileNamePattern>
+			<maxHistory>${log.save.time.day}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<!-- 建康检测 暂时没用到 -->
+	<appender name="SERVICE-CHECK-APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>INFO</level>
+		</filter>
+		<encoder>
+			<Pattern>%date{yyyy-MM-dd HH:mm:ss.SSS}\t[%thread]\t%-5level\t%logger\t-\t%X{KEY_WORDS}%msg%n</Pattern>
+			<charset class="java.nio.charset.Charset">utf-8</charset>
+		</encoder>
+		<file>${logging.path}/${system.log}/${app.name}.service_check.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${logging.path}/${system.log}/${app.name}.service_check.log.%d{yyyy-MM-dd_HH-mm}</FileNamePattern>
+			<maxHistory>${log.save.time.day}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<!-- 外部调用摘要日志 -->
+	<appender name="COMMON-INTEGRATION-APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>INFO</level>
+		</filter>
+		<encoder>
+			<Pattern>%date{yyyy-MM-dd HH:mm:ss.SSS}\t[%thread]\t%-5level\t%logger\t-\t%X{KEY_WORDS}%msg%n</Pattern>
+			<charset class="java.nio.charset.Charset">utf-8</charset>
+		</encoder>
+		<file>${logging.path}/${app.name}.monitor-integration-digest.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${logging.path}/${app.name}.monitor-integration-digest.log.%d{yyyy-MM-dd}</FileNamePattern>
+			<maxHistory>${log.save.time.day}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<!-- 缓存调用摘要日志 -->
+	<appender name="COMMON-CACHE-APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>INFO</level>
+		</filter>
+		<encoder>
+			<Pattern>%date{yyyy-MM-dd HH:mm:ss.SSS}\t[%thread]\t%-5level\t%logger\t-\t%X{KEY_WORDS}%msg%n</Pattern>
+			<charset class="java.nio.charset.Charset">utf-8</charset>
+		</encoder>
+		<file>${logging.path}/${app.name}.monitor-cache-digest.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${logging.path}/${app.name}.monitor-cache-digest.log.%d{yyyy-MM-dd}</FileNamePattern>
+			<maxHistory>${log.save.time.day}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<!-- 外部调用摘要日志 -->
+	<appender name="COMMON-INTERNAL-APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>INFO</level>
+		</filter>
+		<encoder>
+			<Pattern>%date{yyyy-MM-dd HH:mm:ss.SSS}\t[%thread]\t%-5level\t%logger\t-\t%X{KEY_WORDS}%msg%n</Pattern>
+			<charset class="java.nio.charset.Charset">utf-8</charset>
+		</encoder>
+		<file>${logging.path}/${app.name}.monitor-internal-digest.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${logging.path}/${app.name}.monitor-internal-digest.log.%d{yyyy-MM-dd}</FileNamePattern>
+			<maxHistory>${log.save.time.day}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<logger name="CONTRACTMGT-LOGGER" additivity="true">
+		<level value="INFO"/>
+		<appender-ref ref="COMMON-ALL-APPENDER"/>
+		<appender-ref ref="COMMON-ERROR-APPENDER"/>
+	</logger>
+	<logger name="SERVICE-CHECK-LOGGER" additivity="false">
+		<appender-ref ref="SERVICE-CHECK-APPENDER"/>
+		<appender-ref ref="COMMON-ERROR-APPENDER"/>
+	</logger>
+	<logger name="MONITOR-INTEGRATION-LOGGER" additivity="true">
+		<appender-ref ref="COMMON-INTEGRATION-APPENDER"/>
+	</logger>
+	<logger name="MONITOR-CACHE-LOGGER" additivity="true">
+		<appender-ref ref="COMMON-CACHE-APPENDER"/>
+	</logger>
+	<logger name="MONITOR-INTERNAL-LOGGER" additivity="true">
+		<appender-ref ref="COMMON-INTERNAL-APPENDER"/>
+	</logger>
+	<root>
+		<appender-ref ref="CONSOLE"/>
+		<appender-ref ref="COMMON-ALL-APPENDER"/>
+		<appender-ref ref="COMMON-ERROR-APPENDER"/>
+	</root>
+</configuration>
