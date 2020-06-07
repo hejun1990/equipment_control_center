@@ -1,17 +1,16 @@
 package com.geekbang.equipment.management.service;
 
 import com.geekbang.equipment.management.core.Result;
+import com.geekbang.equipment.management.model.DeviceSensirionRecord;
 import com.geekbang.equipment.management.core.Service;
-import com.geekbang.equipment.management.model.DeviceInfo;
+import com.geekbang.equipment.management.model.dto.DeviceSensirionRecordDTO;
 
 
 /**
- * 设备基本信息管理
- *
  * @author hejun
- * @date 2020/06/06
+ * @date 2020/06/07
  */
-public interface DeviceInfoService extends Service<DeviceInfo> {
+public interface DeviceSensirionRecordService extends Service<DeviceSensirionRecord> {
 
     /**
      * 新增
@@ -20,7 +19,7 @@ public interface DeviceInfoService extends Service<DeviceInfo> {
      * @param lang   国际化语言
      * @return Result
      */
-    Result<?> add(DeviceInfo record, String lang);
+    Result<?> add(DeviceSensirionRecordDTO record, String lang);
 
     /**
      * 删除
@@ -38,7 +37,7 @@ public interface DeviceInfoService extends Service<DeviceInfo> {
      * @param lang   国际化语言
      * @return Result
      */
-    Result<?> update(DeviceInfo record, String lang);
+    Result<?> update(DeviceSensirionRecord record, String lang);
 
     /**
      * 单个查询
@@ -58,5 +57,5 @@ public interface DeviceInfoService extends Service<DeviceInfo> {
      * @param lang   国际化语言
      * @return Result
      */
-    Result<?> list(Integer page, Integer size, DeviceInfo record, String lang);
+    Result<?> list(Integer page, Integer size, DeviceSensirionRecord record, String lang);
 }

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.geekbang.equipment.management.dao.DeviceSensirionRecordMapper">
+    <resultMap id="BaseResultMap" type="com.geekbang.equipment.management.model.DeviceSensirionRecord">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="device_code" jdbcType="VARCHAR" property="deviceCode"/>
+        <result column="temperature" jdbcType="DECIMAL" property="temperature"/>
+        <result column="humidity" jdbcType="DECIMAL" property="humidity"/>
+        <result column="battery" jdbcType="SMALLINT" property="battery"/>
+        <result column="record_time" jdbcType="TIMESTAMP" property="recordTime"/>
+    </resultMap>
+
+    <!-- 动态插入数据记录 -->
+    <insert id="addRecord" parameterType="com.geekbang.equipment.management.model.dto.DeviceSensirionRecordDTO">
+        INSERT INTO `${tableName}` (
+          `device_code`,
+          `temperature`,
+          `humidity`,
+          `battery`,
+          `record_time`
+        )
+        VALUES
+          (#{deviceCode,jdbcType=VARCHAR}, #{temperature,jdbcType=DECIMAL}, #{humidity,jdbcType=DECIMAL}, #{battery,jdbcType=SMALLINT}, #{recordTime,jdbcType=TIMESTAMP})
+    </insert>
+
+    <!-- 动态创建表 -->
+    <update id="createTable" parameterType="string">
+        CREATE TABLE `${tableName}` (
+          `id` INT (10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键id',
+          `device_code` VARCHAR (32) NOT NULL COMMENT '设备编码',
+          `temperature` DECIMAL (6, 2) DEFAULT NULL COMMENT '温度',
+          `humidity` DECIMAL (6, 2) DEFAULT NULL COMMENT '湿度',
+          `battery` SMALLINT (6) UNSIGNED DEFAULT NULL COMMENT '电池电量(0-100)',
+          `record_time` DATETIME (6) DEFAULT NULL COMMENT '上报时间',
+          PRIMARY KEY (`id`),
+          KEY `idx_device_code_record_time` (`device_code` (16), `record_time`)
+        ) ENGINE = INNODB DEFAULT CHARSET = utf8mb4 COMMENT = '${tableComment}'
+    </update>
+</mapper>

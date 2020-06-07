@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 
 /**
+ * 设备基本信息管理
  *
  * @author hejun
  * @date 2020/06/06
