@@ -30,7 +30,7 @@ public enum DeviceRecordTableConstant {
     /**
      * 锁
      */
-    public Lock lock = new ReentrantLock(true);
+    public final Lock lock = new ReentrantLock(true);
 
     DeviceRecordTableConstant(String prefixName) {
         this.prefixName = prefixName;
