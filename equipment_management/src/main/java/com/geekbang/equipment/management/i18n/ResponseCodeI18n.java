@@ -19,7 +19,11 @@ public enum ResponseCodeI18n {
     /**
      * 更新失败
      */
-    UPDATE_FAIL(100003, "api.response.update.fail");
+    UPDATE_FAIL(100003, "api.response.update.fail"),
+    /**
+     * 创建表失败
+     */
+    CREATE_TABLE_FAIL(100004, "api.response.create.table.fail");
 
     /**
      * 返回码

@@ -14,6 +14,7 @@ import com.geekbang.equipment.management.service.DeviceSensirionRecordService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import tk.mybatis.mapper.entity.Condition;
@@ -31,7 +32,6 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@Transactional(rollbackFor = Exception.class)
 public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSensirionRecord> implements DeviceSensirionRecordService {
 
     @Resource
@@ -48,34 +48,79 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
      * @return Result
      */
     @Override
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public Result<?> add(DeviceSensirionRecordDTO record, String lang) {
-        String prefixName = record.getPrefixName();
-        if (StringUtils.isEmpty(prefixName)) {
-            return ResultGenerator.genFailResult(ResponseCodeI18n.INSERT_FAIL.getMsg(), lang);
-        }
-        DeviceRecordTableConstant deviceRecordTableConstant = DeviceRecordTableConstant.getTableConstant(prefixName);
-        if (deviceRecordTableConstant == null) {
-            return ResultGenerator.genFailResult(ResponseCodeI18n.INSERT_FAIL.getMsg(), lang);
-        }
-        String tableName = deviceRecordTableConstant.getTableName();
-        if (StringUtils.isEmpty(tableName)) {
+        DeviceRecordTableConstant sensirionConstant = DeviceRecordTableConstant.SENSIRION;
+        // 当前表名
+        String tableName = sensirionConstant.getTableName();
+        if (StringUtils.isBlank(tableName)) {
+            String prefixName = sensirionConstant.getPrefixName();
             // 查询设备上报数据记录表表信息表
             Condition condition = new Condition(DeviceRecordTableInfo.class);
             Condition.Criteria criteria = condition.createCriteria();
             criteria.andEqualTo("prefixName", prefixName);
             List<DeviceRecordTableInfo> deviceRecordTableInfos = deviceRecordTableInfoMapper.selectByCondition(condition);
+            // 如果表信息表中的也没有表信息，则创建新表，即为初次创建数据上报表
             if (CollectionUtils.isEmpty(deviceRecordTableInfos)) {
-                /*
-                 创建新表
-                 todo
-                */
-            } else {
+                sensirionConstant.lock.lock();
+                try {
+                    // 重新判断设备上报数据记录表表信息表中是否有表的信息
+                    deviceRecordTableInfos = deviceRecordTableInfoMapper.selectByCondition(condition);
+                    if (!CollectionUtils.isEmpty(deviceRecordTableInfos)) {
+                        DeviceRecordTableInfo deviceRecordTableInfo = deviceRecordTableInfos.stream()
+                                .sorted((o1, o2) -> o2.getId() - o1.getId()).collect(Collectors.toList())
+                                .get(0);
+                        tableName = deviceRecordTableInfo.getTableName();
+                    } else {
+                        // 新表表名
+                        tableName = prefixName + "_1";
+                        // 新表注释
+                        String tableComment = sensirionConstant.getTableComment() + "1";
+                        boolean success = deviceSensirionRecordMapper.createTable(tableName, tableComment) == 0;
+                        if (!success) {
+                            return ResultGenerator.genFailResult(ResponseCodeI18n.CREATE_TABLE_FAIL.getMsg(), lang);
+                        }
+                        DeviceRecordTableInfo deviceRecordTableInfo = new DeviceRecordTableInfo();
+                        deviceRecordTableInfo.setPrefixName(prefixName);
+                        deviceRecordTableInfo.setTableName(tableName);
+                        deviceRecordTableInfo.setRowNumber(0);
+                        success = deviceRecordTableInfoMapper.insertSelective(deviceRecordTableInfo) == 1;
+                        if (!success) {
+                            return ResultGenerator.genFailResult(ResponseCodeI18n.INSERT_FAIL.getMsg(), lang);
+                        }
+                        sensirionConstant.setTableName(tableName);
+                    }
+                } finally {
+                    sensirionConstant.lock.unlock();
+                }
+            }
+            // 如果表信息表中有表信息，则更新枚举类中的当前表名
+            else {
                 DeviceRecordTableInfo deviceRecordTableInfo = deviceRecordTableInfos.stream()
                         .sorted((o1, o2) -> o2.getId() - o1.getId()).collect(Collectors.toList())
                         .get(0);
-                tableName = deviceRecordTableInfo.getTableName();
+                sensirionConstant.lock.lock();
+                try {
+                    // 需要再次确认枚举类中是否已有当前表名
+                    if (StringUtils.isBlank(sensirionConstant.getTableName())) {
+                        tableName = deviceRecordTableInfo.getTableName();
+                        sensirionConstant.setTableName(tableName);
+                    }
+                } finally {
+                    sensirionConstant.lock.unlock();
+                }
             }
         }
+        // 新增温湿度设备上报数据
+        record.setTableName(tableName);
+        boolean success = deviceSensirionRecordMapper.addRecord(record) == 1;
+        if (!success) {
+            return ResultGenerator.genFailResult(ResponseCodeI18n.INSERT_FAIL.getMsg(), lang);
+        }
+        /*
+         判断是否需要创建新表
+         todo
+        */
         return ResultGenerator.genSuccessResult();
     }
 

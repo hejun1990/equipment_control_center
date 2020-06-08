@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 温湿度设备数据上报记录DTO
  *
@@ -13,12 +15,9 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class DeviceSensirionRecordDTO extends DeviceSensirionRecord {
+public class DeviceSensirionRecordDTO extends DeviceSensirionRecord implements Serializable {
 
-    /**
-     * 前缀名
-     */
-    private String prefixName;
+    private static final long serialVersionUID = 9177254331877746425L;
 
     /**
      * 表名

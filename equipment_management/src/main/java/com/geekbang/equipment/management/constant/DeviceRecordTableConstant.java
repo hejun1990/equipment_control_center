@@ -15,12 +15,17 @@ public enum DeviceRecordTableConstant {
     /**
      * 温湿度设备数据上报记录表
      */
-    SENSIRION("device_sensirion_record");
+    SENSIRION("device_sensirion_record", "温湿度设备数据上报记录表");
 
     /**
      * 前缀名
      */
     private final String prefixName;
+
+    /**
+     * 表注释
+     */
+    private final String tableComment;
 
     /**
      * 表名(当前插入数据时应使用的表名)
@@ -32,12 +37,17 @@ public enum DeviceRecordTableConstant {
      */
     public final Lock lock = new ReentrantLock(true);
 
-    DeviceRecordTableConstant(String prefixName) {
+    DeviceRecordTableConstant(String prefixName, String tableComment) {
         this.prefixName = prefixName;
+        this.tableComment = tableComment;
     }
 
     public String getPrefixName() {
         return prefixName;
+    }
+
+    public String getTableComment() {
+        return tableComment;
     }
 
     public void setTableName(String tableName) {
@@ -48,6 +58,12 @@ public enum DeviceRecordTableConstant {
         return tableName;
     }
 
+    /**
+     * 通过表前缀名获取对应的枚举类
+     *
+     * @param prefixName 表前缀名
+     * @return DeviceRecordTableConstant
+     */
     public static DeviceRecordTableConstant getTableConstant(String prefixName) {
         if (StringUtils.isBlank(prefixName)) {
             return null;
