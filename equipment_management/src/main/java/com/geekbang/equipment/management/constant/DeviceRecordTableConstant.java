@@ -56,6 +56,10 @@ public enum DeviceRecordTableConstant {
         return tableComment;
     }
 
+    public int getRowThreshold() {
+        return rowThreshold;
+    }
+
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }

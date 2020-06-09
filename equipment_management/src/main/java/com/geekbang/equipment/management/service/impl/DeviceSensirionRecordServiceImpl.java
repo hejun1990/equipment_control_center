@@ -51,10 +51,11 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
     @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public Result<?> add(DeviceSensirionRecordDTO record, String lang) {
         DeviceRecordTableConstant sensirionConstant = DeviceRecordTableConstant.SENSIRION;
+        // 前缀名
+        String prefixName = sensirionConstant.getPrefixName();
         // 当前表名
         String tableName = sensirionConstant.getTableName();
         if (StringUtils.isBlank(tableName)) {
-            String prefixName = sensirionConstant.getPrefixName();
             // 查询设备上报数据记录表表信息表
             Condition condition = new Condition(DeviceRecordTableInfo.class);
             Condition.Criteria criteria = condition.createCriteria();
@@ -80,16 +81,16 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
                         if (!success) {
                             return ResultGenerator.genFailResult(ResponseCodeI18n.CREATE_TABLE_FAIL.getMsg(), lang);
                         }
-                        DeviceRecordTableInfo deviceRecordTableInfo = new DeviceRecordTableInfo();
-                        deviceRecordTableInfo.setPrefixName(prefixName);
-                        deviceRecordTableInfo.setTableName(tableName);
-                        deviceRecordTableInfo.setRowNumber(0);
-                        success = deviceRecordTableInfoMapper.insertSelective(deviceRecordTableInfo) == 1;
+                        DeviceRecordTableInfo createRecord = new DeviceRecordTableInfo();
+                        createRecord.setPrefixName(prefixName);
+                        createRecord.setTableName(tableName);
+                        createRecord.setRowNumber(0);
+                        success = deviceRecordTableInfoMapper.insertSelective(createRecord) == 1;
                         if (!success) {
                             return ResultGenerator.genFailResult(ResponseCodeI18n.INSERT_FAIL.getMsg(), lang);
                         }
-                        sensirionConstant.setTableName(tableName);
                     }
+                    sensirionConstant.setTableName(tableName);
                 } finally {
                     sensirionConstant.lock.unlock();
                 }
@@ -118,22 +119,67 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
             return ResultGenerator.genFailResult(ResponseCodeI18n.INSERT_FAIL.getMsg(), lang);
         }
         // 更新设备上报数据记录表表信息表中的总行数，如果总行数超过阈值，则创建新表
-        DeviceRecordTableInfo deviceRecordTableInfoRecord = new DeviceRecordTableInfo();
-        deviceRecordTableInfoRecord.setPrefixName(sensirionConstant.getPrefixName());
-        deviceRecordTableInfoRecord.setTableName(tableName);
-        List<DeviceRecordTableInfo> deviceRecordTableInfos = deviceRecordTableInfoMapper.select(deviceRecordTableInfoRecord);
-        if (CollectionUtils.isEmpty(deviceRecordTableInfos)) {
-            throw new RuntimeException("系统数据异常");
-        }
-        DeviceRecordTableInfo deviceRecordTableInfo = deviceRecordTableInfos.get(0);
-        Integer rowNumber = deviceRecordTableInfo.getRowNumber();
+        Condition condition = new Condition(DeviceRecordTableInfo.class);
+        Condition.Criteria criteria = condition.createCriteria();
+        criteria.andEqualTo("prefixName", prefixName)
+                .andEqualTo("tableName", tableName);
         DeviceRecordTableInfo updateRecord = new DeviceRecordTableInfo();
-        updateRecord.setId(deviceRecordTableInfo.getId());
-        updateRecord.setRowNumber(++rowNumber);
-        updateRecord.setVersionNo(deviceRecordTableInfo.getVersionNo() + 1);
+        List<DeviceRecordTableInfo> deviceRecordTableInfos;
+        DeviceRecordTableInfo deviceRecordTableInfo;
+        // 这里有并发竞争，因此更新失败就继续更新
         do {
-
+            deviceRecordTableInfos = deviceRecordTableInfoMapper.selectByCondition(condition);
+            if (CollectionUtils.isEmpty(deviceRecordTableInfos)) {
+                throw new RuntimeException("系统数据异常");
+            }
+            deviceRecordTableInfo = deviceRecordTableInfos.get(0);
+            updateRecord.setId(deviceRecordTableInfo.getId());
+            updateRecord.setRowNumber(deviceRecordTableInfo.getRowNumber() + 1);
+            updateRecord.setVersionNo(deviceRecordTableInfo.getVersionNo() + 1);
+            success = deviceRecordTableInfoMapper.updateByPrimaryKeySelective(updateRecord) == 1;
         } while (!success);
+        // 超过阈值，创建新表
+        if (updateRecord.getRowNumber() > sensirionConstant.getRowThreshold()) {
+            sensirionConstant.lock.lock();
+            try {
+                // 检查当前插入表的表名和枚举类缓存的表名以及表信息表中最新表名是否一致
+                condition.clear();
+                criteria = condition.createCriteria();
+                criteria.andEqualTo("prefixName", prefixName);
+                deviceRecordTableInfos = deviceRecordTableInfoMapper.selectByCondition(condition);
+                if (!CollectionUtils.isEmpty(deviceRecordTableInfos)) {
+                    deviceRecordTableInfo = deviceRecordTableInfos.stream()
+                            .sorted((o1, o2) -> o2.getId() - o1.getId()).collect(Collectors.toList())
+                            .get(0);
+                    if (tableName.equals(sensirionConstant.getTableName())
+                            && tableName.equals(deviceRecordTableInfo.getTableName())) {
+                        String index = tableName.substring(tableName.indexOf("_") + 1);
+                        StringBuilder newTableName = new StringBuilder();
+                        int newIndex = Integer.parseInt(index) + 1;
+                        newTableName.append(prefixName).append("_").append(newIndex);
+                        // 新表表名
+                        tableName = newTableName.toString();
+                        // 新表注释
+                        String tableComment = sensirionConstant.getTableComment() + newIndex;
+                        success = deviceSensirionRecordMapper.createTable(tableName, tableComment) == 0;
+                        if (!success) {
+                            return ResultGenerator.genFailResult(ResponseCodeI18n.CREATE_TABLE_FAIL.getMsg(), lang);
+                        }
+                        DeviceRecordTableInfo createRecord = new DeviceRecordTableInfo();
+                        createRecord.setPrefixName(prefixName);
+                        createRecord.setTableName(tableName);
+                        createRecord.setRowNumber(0);
+                        success = deviceRecordTableInfoMapper.insertSelective(createRecord) == 1;
+                        if (!success) {
+                            return ResultGenerator.genFailResult(ResponseCodeI18n.INSERT_FAIL.getMsg(), lang);
+                        }
+                        sensirionConstant.setTableName(tableName);
+                    }
+                }
+            } finally {
+                sensirionConstant.lock.unlock();
+            }
+        }
         return ResultGenerator.genSuccessResult();
     }
 
