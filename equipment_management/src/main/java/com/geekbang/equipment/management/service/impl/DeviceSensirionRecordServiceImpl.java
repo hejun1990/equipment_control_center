@@ -117,10 +117,23 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
         if (!success) {
             return ResultGenerator.genFailResult(ResponseCodeI18n.INSERT_FAIL.getMsg(), lang);
         }
-        /*
-         判断是否需要创建新表
-         todo
-        */
+        // 更新设备上报数据记录表表信息表中的总行数，如果总行数超过阈值，则创建新表
+        DeviceRecordTableInfo deviceRecordTableInfoRecord = new DeviceRecordTableInfo();
+        deviceRecordTableInfoRecord.setPrefixName(sensirionConstant.getPrefixName());
+        deviceRecordTableInfoRecord.setTableName(tableName);
+        List<DeviceRecordTableInfo> deviceRecordTableInfos = deviceRecordTableInfoMapper.select(deviceRecordTableInfoRecord);
+        if (CollectionUtils.isEmpty(deviceRecordTableInfos)) {
+            throw new RuntimeException("系统数据异常");
+        }
+        DeviceRecordTableInfo deviceRecordTableInfo = deviceRecordTableInfos.get(0);
+        Integer rowNumber = deviceRecordTableInfo.getRowNumber();
+        DeviceRecordTableInfo updateRecord = new DeviceRecordTableInfo();
+        updateRecord.setId(deviceRecordTableInfo.getId());
+        updateRecord.setRowNumber(++rowNumber);
+        updateRecord.setVersionNo(deviceRecordTableInfo.getVersionNo() + 1);
+        do {
+
+        } while (!success);
         return ResultGenerator.genSuccessResult();
     }
 
