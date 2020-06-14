@@ -120,23 +120,28 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
         }
         // 更新设备上报数据记录表表信息表中的总行数，如果总行数超过阈值，则创建新表
         Condition condition = new Condition(DeviceRecordTableInfo.class);
-        Condition.Criteria criteria = condition.createCriteria();
-        criteria.andEqualTo("prefixName", prefixName)
-                .andEqualTo("tableName", tableName);
+        Condition.Criteria criteria;
         DeviceRecordTableInfo updateRecord = new DeviceRecordTableInfo();
         List<DeviceRecordTableInfo> deviceRecordTableInfos;
         DeviceRecordTableInfo deviceRecordTableInfo;
         // 这里有并发竞争，因此更新失败就继续更新
         do {
+            condition.clear();
+            criteria = condition.createCriteria();
+            criteria.andEqualTo("prefixName", prefixName)
+                    .andEqualTo("tableName", tableName);
             deviceRecordTableInfos = deviceRecordTableInfoMapper.selectByCondition(condition);
             if (CollectionUtils.isEmpty(deviceRecordTableInfos)) {
                 throw new RuntimeException("系统数据异常");
             }
             deviceRecordTableInfo = deviceRecordTableInfos.get(0);
-            updateRecord.setId(deviceRecordTableInfo.getId());
             updateRecord.setRowNumber(deviceRecordTableInfo.getRowNumber() + 1);
             updateRecord.setVersionNo(deviceRecordTableInfo.getVersionNo() + 1);
-            success = deviceRecordTableInfoMapper.updateByPrimaryKeySelective(updateRecord) == 1;
+            condition.clear();
+            criteria = condition.createCriteria();
+            criteria.andEqualTo("id", deviceRecordTableInfo.getId())
+                    .andEqualTo("versionNo", deviceRecordTableInfo.getVersionNo());
+            success = deviceRecordTableInfoMapper.updateByConditionSelective(updateRecord, condition) == 1;
         } while (!success);
         // 超过阈值，创建新表
         if (updateRecord.getRowNumber() > sensirionConstant.getRowThreshold()) {
