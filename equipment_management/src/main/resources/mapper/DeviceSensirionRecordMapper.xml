@@ -14,7 +14,8 @@
     </resultMap>
 
     <!-- 动态插入数据记录 -->
-    <insert id="addRecord" parameterType="com.geekbang.equipment.management.model.dto.DeviceSensirionRecordDTO">
+    <insert id="addRecord" parameterType="com.geekbang.equipment.management.model.dto.DeviceSensirionRecordDTO"
+            useGeneratedKeys="true" keyProperty="id">
         INSERT INTO `${tableName}` (
           `device_code`,
           `temperature`,

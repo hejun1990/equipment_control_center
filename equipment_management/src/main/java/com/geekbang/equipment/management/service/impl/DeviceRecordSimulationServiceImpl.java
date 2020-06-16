@@ -85,13 +85,13 @@ public class DeviceRecordSimulationServiceImpl implements DeviceRecordSimulation
             int idx = random.nextInt(size);
             String deviceCode = deviceCodeList.get(idx);
             deviceSensirionRecordDTO.setDeviceCode(deviceCode);
-            int temp_i = random.nextInt(100);
-            int temp_d = random.nextInt(100);
-            String temperature = temp_i + "." + temp_d;
+            int tempI = random.nextInt(100);
+            int tempD = random.nextInt(100);
+            String temperature = tempI + "." + tempD;
             deviceSensirionRecordDTO.setTemperature(new BigDecimal(temperature));
-            int hum_i = random.nextInt(100);
-            int hum_d = random.nextInt(100);
-            String humidity = hum_i + "." + hum_d;
+            int humI = random.nextInt(100);
+            int humD = random.nextInt(100);
+            String humidity = humI + "." + humD;
             deviceSensirionRecordDTO.setHumidity(new BigDecimal(humidity));
             int battery = random.nextInt(100);
             deviceSensirionRecordDTO.setBattery(battery);
@@ -99,5 +99,6 @@ public class DeviceRecordSimulationServiceImpl implements DeviceRecordSimulation
             deviceSensirionRecordDTO.setRecordTime(recordTime);
             deviceSensirionRecordService.add(deviceSensirionRecordDTO, lang);
         }
+        log.info("执行完毕{}", salt);
     }
 }
