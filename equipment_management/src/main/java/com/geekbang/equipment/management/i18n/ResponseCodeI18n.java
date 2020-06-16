@@ -23,7 +23,11 @@ public enum ResponseCodeI18n {
     /**
      * 创建表失败
      */
-    CREATE_TABLE_FAIL(100004, "api.response.create.table.fail");
+    CREATE_TABLE_FAIL(100004, "api.response.create.table.fail"),
+    /**
+     * 查询数据为空
+     */
+    DATA_IS_NULL(100005, "api.response.data.is.null");
 
     /**
      * 返回码

@@ -15,7 +15,7 @@ public enum DeviceRecordTableConstant {
     /**
      * 温湿度设备数据上报记录表
      */
-    SENSIRION("device_sensirion_record", "温湿度设备数据上报记录表", 1_000);
+    SENSIRION("device_sensirion_record", "温湿度设备数据上报记录表", 800);
 
     /**
      * 前缀名

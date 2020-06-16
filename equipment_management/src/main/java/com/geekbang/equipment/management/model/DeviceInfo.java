@@ -28,6 +28,12 @@ public class DeviceInfo {
     private String deviceCode;
 
     /**
+     * 设备类型编码
+     */
+    @Column(name = "device_type_no")
+    private String deviceTypeNo;
+
+    /**
      * 设备名称
      */
     @Column(name = "device_name")
@@ -63,7 +69,7 @@ public class DeviceInfo {
      * 是否删除(0-否,1-是)
      */
     @Column(name = "is_deleted")
-    private Byte isDeleted;
+    private Integer isDeleted;
 
     /**
      * 版本号

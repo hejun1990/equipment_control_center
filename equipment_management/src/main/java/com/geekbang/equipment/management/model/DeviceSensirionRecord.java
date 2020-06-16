@@ -45,7 +45,7 @@ public class DeviceSensirionRecord implements Serializable {
     /**
      * 电池电量(0-100)
      */
-    private Short battery;
+    private Integer battery;
 
     /**
      * 上报时间
