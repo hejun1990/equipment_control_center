@@ -1,9 +1,7 @@
 package com.geekbang.equipment.management.model.dto;
 
+import com.geekbang.equipment.management.constant.DeviceRecordTableConstant;
 import com.geekbang.equipment.management.model.DeviceSensirionRecord;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
 
 import java.io.Serializable;
 
@@ -12,15 +10,37 @@ import java.io.Serializable;
  *
  * @author jun_h
  */
-@Setter
-@Getter
-@ToString
 public class DeviceSensirionRecordDTO extends DeviceSensirionRecord implements Serializable {
 
     private static final long serialVersionUID = 9177254331877746425L;
 
     /**
+     * 前缀名
+     */
+    private final String prefixName = DeviceRecordTableConstant.SENSIRION.getPrefixName();
+
+    /**
      * 表名
      */
     private String tableName;
+
+    public String getPrefixName() {
+        return prefixName;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    @Override
+    public String toString() {
+        return "DeviceSensirionRecordDTO{" +
+                "prefixName='" + prefixName + '\'' +
+                ", tableName='" + tableName + '\'' +
+                '}';
+    }
 }
