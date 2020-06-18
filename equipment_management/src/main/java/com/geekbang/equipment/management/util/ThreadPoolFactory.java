@@ -23,7 +23,7 @@ public enum ThreadPoolFactory {
 
     ThreadPoolFactory(String name) {
         ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat(name).build();
-        this.pool = new ThreadPoolExecutor(0, 200, 0L, TimeUnit.MILLISECONDS,
+        this.pool = new ThreadPoolExecutor(5, 200, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingDeque<>(1024), namedThreadFactory, new ThreadPoolExecutor.AbortPolicy());
     }
 

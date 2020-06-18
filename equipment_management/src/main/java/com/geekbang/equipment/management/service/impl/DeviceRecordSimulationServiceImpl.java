@@ -83,7 +83,6 @@ public class DeviceRecordSimulationServiceImpl implements DeviceRecordSimulation
         Random random = new Random(System.nanoTime() + salt);
         for (int i = 0; i < count; i++) {
             DeviceSensirionRecord deviceSensirionRecord = new DeviceSensirionRecord();
-            deviceSensirionRecord.setPrefixName(DeviceRecordTableConstant.SENSIRION.getPrefixName());
             int idx = random.nextInt(size);
             String deviceCode = deviceCodeList.get(idx);
             deviceSensirionRecord.setDeviceCode(deviceCode);

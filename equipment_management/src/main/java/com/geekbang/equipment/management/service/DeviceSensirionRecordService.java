@@ -3,7 +3,6 @@ package com.geekbang.equipment.management.service;
 import com.geekbang.equipment.management.core.Result;
 import com.geekbang.equipment.management.core.Service;
 import com.geekbang.equipment.management.model.DeviceSensirionRecord;
-import com.geekbang.equipment.management.model.TableEntity;
 
 
 /**
@@ -38,8 +37,6 @@ public interface DeviceSensirionRecordService extends Service<DeviceSensirionRec
      * @return Result
      */
     Result<?> update(DeviceSensirionRecord record, String lang);
-
-    Result<?> update(TableEntity record, String lang);
 
     /**
      * 单个查询

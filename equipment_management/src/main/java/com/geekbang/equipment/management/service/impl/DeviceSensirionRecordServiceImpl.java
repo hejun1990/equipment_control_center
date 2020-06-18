@@ -224,13 +224,6 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
         return ResultGenerator.genSuccessResult();
     }
 
-    @Override
-    public Result<?> update(TableEntity record, String lang) {
-        log.info("---------- update 1 ----------");
-        log.info("prefixName = {}", record.getPrefixName());
-        return ResultGenerator.genSuccessResult();
-    }
-
     /**
      * 单个查询
      *

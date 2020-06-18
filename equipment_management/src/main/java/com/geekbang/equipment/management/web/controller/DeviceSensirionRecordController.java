@@ -2,7 +2,6 @@ package com.geekbang.equipment.management.web.controller;
 
 import com.geekbang.equipment.management.core.Result;
 import com.geekbang.equipment.management.model.DeviceSensirionRecord;
-import com.geekbang.equipment.management.model.TableEntity;
 import com.geekbang.equipment.management.service.DeviceSensirionRecordService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -56,8 +55,7 @@ public class DeviceSensirionRecordController {
      */
     @PutMapping
     public Result<?> update(@RequestBody DeviceSensirionRecord record, @PathVariable(value = "lang") String lang) {
-        TableEntity tableEntity = new TableEntity();
-        return deviceSensirionRecordService.update(tableEntity, lang);
+        return deviceSensirionRecordService.update(record, lang);
     }
 
     /**
