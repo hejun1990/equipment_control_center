@@ -2,7 +2,6 @@ package com.geekbang.equipment.management.dao;
 
 import com.geekbang.equipment.management.core.Mapper;
 import com.geekbang.equipment.management.model.DeviceSensirionRecord;
-import com.geekbang.equipment.management.model.dto.DeviceSensirionRecordDTO;
 import org.apache.ibatis.annotations.Param;
 
 /**
@@ -27,5 +26,5 @@ public interface DeviceSensirionRecordMapper extends Mapper<DeviceSensirionRecor
      * @param record 参数
      * @return int
      */
-    int addRecord(DeviceSensirionRecordDTO record);
+    int addRecord(DeviceSensirionRecord record);
 }

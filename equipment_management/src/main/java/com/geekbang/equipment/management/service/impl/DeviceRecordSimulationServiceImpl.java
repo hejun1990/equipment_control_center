@@ -1,13 +1,14 @@
 package com.geekbang.equipment.management.service.impl;
 
 import com.geekbang.equipment.management.constant.BasicConstant;
+import com.geekbang.equipment.management.constant.DeviceRecordTableConstant;
 import com.geekbang.equipment.management.constant.DeviceTypeConstant;
 import com.geekbang.equipment.management.core.Result;
 import com.geekbang.equipment.management.core.ResultGenerator;
 import com.geekbang.equipment.management.dao.DeviceInfoMapper;
 import com.geekbang.equipment.management.i18n.ResponseCodeI18n;
 import com.geekbang.equipment.management.model.DeviceInfo;
-import com.geekbang.equipment.management.model.dto.DeviceSensirionRecordDTO;
+import com.geekbang.equipment.management.model.DeviceSensirionRecord;
 import com.geekbang.equipment.management.service.DeviceRecordSimulationService;
 import com.geekbang.equipment.management.service.DeviceSensirionRecordService;
 import com.geekbang.equipment.management.util.ThreadPoolFactory;
@@ -81,23 +82,24 @@ public class DeviceRecordSimulationServiceImpl implements DeviceRecordSimulation
         int size = deviceCodeList.size();
         Random random = new Random(System.nanoTime() + salt);
         for (int i = 0; i < count; i++) {
-            DeviceSensirionRecordDTO deviceSensirionRecordDTO = new DeviceSensirionRecordDTO();
+            DeviceSensirionRecord deviceSensirionRecord = new DeviceSensirionRecord();
+            deviceSensirionRecord.setPrefixName(DeviceRecordTableConstant.SENSIRION.getPrefixName());
             int idx = random.nextInt(size);
             String deviceCode = deviceCodeList.get(idx);
-            deviceSensirionRecordDTO.setDeviceCode(deviceCode);
+            deviceSensirionRecord.setDeviceCode(deviceCode);
             int tempI = random.nextInt(100);
             int tempD = random.nextInt(100);
             String temperature = tempI + "." + tempD;
-            deviceSensirionRecordDTO.setTemperature(new BigDecimal(temperature));
+            deviceSensirionRecord.setTemperature(new BigDecimal(temperature));
             int humI = random.nextInt(100);
             int humD = random.nextInt(100);
             String humidity = humI + "." + humD;
-            deviceSensirionRecordDTO.setHumidity(new BigDecimal(humidity));
+            deviceSensirionRecord.setHumidity(new BigDecimal(humidity));
             int battery = random.nextInt(100);
-            deviceSensirionRecordDTO.setBattery(battery);
+            deviceSensirionRecord.setBattery(battery);
             Date recordTime = new Date(System.nanoTime());
-            deviceSensirionRecordDTO.setRecordTime(recordTime);
-            deviceSensirionRecordService.add(deviceSensirionRecordDTO, lang);
+            deviceSensirionRecord.setRecordTime(recordTime);
+            deviceSensirionRecordService.add(deviceSensirionRecord, lang);
         }
         log.info("执行完毕{}", salt);
     }

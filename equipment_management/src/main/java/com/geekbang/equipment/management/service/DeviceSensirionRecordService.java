@@ -1,9 +1,9 @@
 package com.geekbang.equipment.management.service;
 
 import com.geekbang.equipment.management.core.Result;
-import com.geekbang.equipment.management.model.DeviceSensirionRecord;
 import com.geekbang.equipment.management.core.Service;
-import com.geekbang.equipment.management.model.dto.DeviceSensirionRecordDTO;
+import com.geekbang.equipment.management.model.DeviceSensirionRecord;
+import com.geekbang.equipment.management.model.TableEntity;
 
 
 /**
@@ -19,7 +19,7 @@ public interface DeviceSensirionRecordService extends Service<DeviceSensirionRec
      * @param lang   国际化语言
      * @return Result
      */
-    Result<?> add(DeviceSensirionRecordDTO record, String lang);
+    Result<?> add(DeviceSensirionRecord record, String lang);
 
     /**
      * 删除
@@ -38,6 +38,8 @@ public interface DeviceSensirionRecordService extends Service<DeviceSensirionRec
      * @return Result
      */
     Result<?> update(DeviceSensirionRecord record, String lang);
+
+    Result<?> update(TableEntity record, String lang);
 
     /**
      * 单个查询

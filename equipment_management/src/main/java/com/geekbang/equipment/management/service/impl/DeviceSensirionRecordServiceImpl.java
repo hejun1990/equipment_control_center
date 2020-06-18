@@ -9,10 +9,9 @@ import com.geekbang.equipment.management.dao.DeviceSensirionRecordMapper;
 import com.geekbang.equipment.management.i18n.ResponseCodeI18n;
 import com.geekbang.equipment.management.model.DeviceRecordTableInfo;
 import com.geekbang.equipment.management.model.DeviceSensirionRecord;
-import com.geekbang.equipment.management.model.dto.DeviceSensirionRecordDTO;
+import com.geekbang.equipment.management.model.TableEntity;
 import com.geekbang.equipment.management.service.DeviceSensirionRecordService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +20,6 @@ import tk.mybatis.mapper.entity.Condition;
 
 import javax.annotation.Resource;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 /**
@@ -49,7 +47,13 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
      */
     @Override
     @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
-    public Result<?> add(DeviceSensirionRecordDTO record, String lang) {
+    public Result<?> add(DeviceSensirionRecord record, String lang) {
+        // 前缀名
+        String prefixName = record.getPrefixName();
+        DeviceRecordTableConstant sensirionConstant = DeviceRecordTableConstant.getTableConstant(prefixName);
+        // 当前表名
+        String tableName = sensirionConstant.getTableName();
+        /*
         DeviceRecordTableConstant sensirionConstant = DeviceRecordTableConstant.SENSIRION;
         // 前缀名
         String prefixName = sensirionConstant.getPrefixName();
@@ -114,6 +118,7 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
                 }
             }
         }
+         */
         // 新增温湿度设备上报数据
         record.setTableName(tableName);
         boolean success = deviceSensirionRecordMapper.addRecord(record) == 1;
@@ -145,6 +150,7 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
                     .andEqualTo("versionNo", deviceRecordTableInfo.getVersionNo());
             success = deviceRecordTableInfoMapper.updateByConditionSelective(updateRecord, condition) == 1;
         } while (!success);
+        /*
         // 超过阈值，创建新表
         if (updateRecord.getRowNumber() > sensirionConstant.getRowThreshold()) {
             if (sensirionConstant.lock.tryLock()) {
@@ -188,6 +194,7 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
                 }
             }
         }
+         */
         return ResultGenerator.genSuccessResult();
     }
 
@@ -212,7 +219,16 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
      */
     @Override
     public Result<?> update(DeviceSensirionRecord record, String lang) {
-        return null;
+        log.info("---------- update ----------");
+        log.info("prefixName = {}", record.getPrefixName());
+        return ResultGenerator.genSuccessResult();
+    }
+
+    @Override
+    public Result<?> update(TableEntity record, String lang) {
+        log.info("---------- update 1 ----------");
+        log.info("prefixName = {}", record.getPrefixName());
+        return ResultGenerator.genSuccessResult();
     }
 
     /**
