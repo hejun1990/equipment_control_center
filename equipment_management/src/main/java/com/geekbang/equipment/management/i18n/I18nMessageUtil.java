@@ -1,6 +1,6 @@
 package com.geekbang.equipment.management.i18n;
 
-import org.springframework.context.MessageSource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
@@ -12,14 +12,20 @@ import java.io.File;
 import java.io.IOException;
 
 /**
+ * 国际化工具
+ *
  * @author zwsky
  */
+@Slf4j
 public class I18nMessageUtil {
-    private static MessageSourceAccessor accessor;
-    private static MessageSource messageSource;
+    /**
+     * 国际化资源路径
+     */
     private static final String PATH_PARENT = "classpath:i18n" + File.separator + "messages_";
+    /**
+     * 国际化资源文件后缀名
+     */
     private static final String SUFFIX = ".properties";
-    private static ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
 
     private I18nMessageUtil() {
     }
@@ -29,8 +35,11 @@ public class I18nMessageUtil {
      * 加载指定语言配置文件
      *
      * @param language 语言类型(文件名即为语言类型,eg: en_us 表明使用 美式英文 语言配置)
+     * @return MessageSourceAccessor
+     * @throws IOException IOException
      */
-    private static void initMessageSourceAccessor(String language) throws IOException {
+    private static MessageSourceAccessor initMessageSourceAccessor(String language) throws IOException {
+        ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
         // 获取配置文件名
         Resource resource = resourcePatternResolver.getResource(PATH_PARENT + language + SUFFIX);
         String fileName = resource.getURL().toString();
@@ -40,21 +49,26 @@ public class I18nMessageUtil {
         ReloadableResourceBundleMessageSource reloadableResourceBundleMessageSource = new ReloadableResourceBundleMessageSource();
         reloadableResourceBundleMessageSource.setBasename(baseName);
         reloadableResourceBundleMessageSource.setCacheSeconds(5);
-        accessor = new MessageSourceAccessor(reloadableResourceBundleMessageSource);
-        messageSource = reloadableResourceBundleMessageSource;
+        return new MessageSourceAccessor(reloadableResourceBundleMessageSource);
     }
 
     /**
      * 获取一条语言配置信息
      *
      * @param language       语言类型,zh_cn: 简体中文, en_us: 英文
-     * @param message        配置信息属性名,eg: api.response.code.user.signUp
+     * @param messageCode    配置信息属性名,eg: api.response.code.user.signUp
      * @param defaultMessage 默认信息,当无法从配置文件中读取到对应的配置信息时返回改信息
      * @return String
-     * @throws IOException
+     * @throws IOException IOException
      */
-    public static String getMessage(String language, String message, String defaultMessage) throws IOException {
-        initMessageSourceAccessor(language);
-        return accessor.getMessage(message, defaultMessage, LocaleContextHolder.getLocale());
+    public static String getMessage(String language, String messageCode, String defaultMessage) {
+        String message = null;
+        try {
+            MessageSourceAccessor accessor = initMessageSourceAccessor(language);
+            message = accessor.getMessage(messageCode, defaultMessage, LocaleContextHolder.getLocale());
+        } catch (IOException e) {
+            log.error("{}", e.getMessage() != null ? e.getMessage() : e);
+        }
+        return message;
     }
 }

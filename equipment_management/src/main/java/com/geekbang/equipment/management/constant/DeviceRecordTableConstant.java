@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.StampedLock;
 
 /**
  * 设备上报数据记录表表信息常量
@@ -38,9 +39,14 @@ public enum DeviceRecordTableConstant {
     private final int rowThreshold;
 
     /**
-     * 锁
+     * 重入锁
      */
     public final Lock lock = new ReentrantLock(true);
+
+    /**
+     * 读写锁
+     */
+    private final StampedLock stampedLock = new StampedLock();
 
     DeviceRecordTableConstant(String prefixName, String tableComment, int rowThreshold) {
         this.prefixName = prefixName;
@@ -61,10 +67,30 @@ public enum DeviceRecordTableConstant {
     }
 
     public void setTableName(String tableName) {
-        this.tableName = tableName;
+        long stamp = stampedLock.writeLock();
+        try {
+            this.tableName = tableName;
+        } finally {
+            stampedLock.unlockWrite(stamp);
+        }
     }
 
     public String getTableName() {
+        // 乐观读
+        long stamp = stampedLock.tryOptimisticRead();
+        String tableName = this.tableName;
+        // 校验stamp。如果执行读操作期间存在写操作，乐观读锁升级为悲观读锁
+        if (!stampedLock.validate(stamp)) {
+            // 升级为悲观读锁
+            stamp = stampedLock.readLock();
+            try {
+                // 读入方法局部变量
+                tableName = this.tableName;
+            } finally {
+                // 释放悲观读锁
+                stampedLock.unlockRead(stamp);
+            }
+        }
         return tableName;
     }
 

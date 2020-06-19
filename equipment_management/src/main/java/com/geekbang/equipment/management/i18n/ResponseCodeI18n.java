@@ -27,7 +27,15 @@ public enum ResponseCodeI18n {
     /**
      * 查询数据为空
      */
-    DATA_IS_NULL(100005, "api.response.data.is.null");
+    DATA_IS_NULL(100005, "api.response.data.is.null"),
+    /**
+     * 表前缀名为空
+     */
+    TABLE_PREFIX_NAME_IS_NULL(100011, "api.response.table.prefixname.is.null"),
+    /**
+     * 表名为空
+     */
+    TABLE_NAME_IS_NULL(100012, "api.response.table.name.is.null");
 
     /**
      * 返回码

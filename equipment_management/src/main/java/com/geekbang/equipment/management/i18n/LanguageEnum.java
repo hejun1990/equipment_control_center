@@ -5,9 +5,8 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * @author hejun
  */
-
 public enum LanguageEnum {
-	/**
+    /**
      * 美式英文
      */
     LANGUAGE_EN_US("en_us"),
@@ -16,27 +15,27 @@ public enum LanguageEnum {
      */
     LANGUAGE_ZH_CN("zh_cn");
 
-    LanguageEnum(String language){
+    LanguageEnum(String language) {
         this.language = language;
     }
 
     private String language;
-    
+
     public String getLanguage() {
-		return language;
-	}
+        return language;
+    }
 
-	public void setLanguage(String language) {
-		this.language = language;
-	}
+    public void setLanguage(String language) {
+        this.language = language;
+    }
 
-	/**
+    /**
      * 获取指定语言类型(如果没有对应的语言类型,则返回中文)
      *
      * @param language 语言类型
-     * @return
+     * @return String
      */
-    public static String getLanguageType(String language){
+    public static String getLanguageType(String language) {
         if (StringUtils.isEmpty(language)) {
             return LANGUAGE_ZH_CN.language;
         }

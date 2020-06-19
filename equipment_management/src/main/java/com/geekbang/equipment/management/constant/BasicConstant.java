@@ -15,4 +15,9 @@ public class BasicConstant {
      * 未删除
      */
     public static final int NO_DELETE = 0;
+
+    /**
+     * 默认失败消息
+     */
+    public static final String DEFAULT_ERROR_MESSAGE = "FAIL";
 }

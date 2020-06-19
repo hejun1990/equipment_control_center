@@ -1,10 +1,9 @@
 package com.geekbang.equipment.management.core;
 
+import com.geekbang.equipment.management.constant.BasicConstant;
 import com.geekbang.equipment.management.i18n.I18nMessageUtil;
 import com.geekbang.equipment.management.i18n.LanguageEnum;
 import org.apache.commons.lang3.StringUtils;
-
-import java.io.IOException;
 
 /**
  * 响应结果生成工具
@@ -19,7 +18,6 @@ public class ResultGenerator {
                 .setCode(ResultCode.SUCCESS)
                 .setMessage(DEFAULT_SUCCESS_MESSAGE);
     }
-
 
     public static <T> Result<T> genSuccessResult(T data) {
         return new Result()
@@ -43,11 +41,7 @@ public class ResultGenerator {
         if (StringUtils.isBlank(language)) {
             message = "Response Msg Error! This language not support!";
         } else {
-            try {
-                message = I18nMessageUtil.getMessage(language, messageStr, "FAIL");
-            } catch (IOException e) {
-                message = "language Msg get Fail!";
-            }
+            message = I18nMessageUtil.getMessage(language, messageStr, BasicConstant.DEFAULT_ERROR_MESSAGE);
         }
         return new Result()
                 .setCode(ResultCode.FAIL)
@@ -65,7 +59,6 @@ public class ResultGenerator {
         if (data != null) {
             result.setData(data);
         }
-
         return result;
     }
 
@@ -78,11 +71,7 @@ public class ResultGenerator {
         if (StringUtils.isBlank(language)) {
             message = "Response Msg Error! This language not support!";
         } else {
-            try {
-                message = I18nMessageUtil.getMessage(language, messageStr, "FAIL");
-            } catch (IOException e) {
-                message = "language Msg get Fail!";
-            }
+            message = I18nMessageUtil.getMessage(language, messageStr, BasicConstant.DEFAULT_ERROR_MESSAGE);
         }
         return new Result()
                 .setCode(ResultCode.SUCCESS)
