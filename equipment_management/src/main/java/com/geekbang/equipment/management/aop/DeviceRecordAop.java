@@ -13,10 +13,8 @@ import com.geekbang.equipment.management.util.ThreadPoolFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.annotation.AfterReturning;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
-import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -57,10 +55,6 @@ public class DeviceRecordAop {
     public void addPointcut() {
     }
 
-    @Pointcut("execution(public com.geekbang.equipment.management.core.Result com.geekbang.equipment.management.service.impl.*.update(..)) && @args(javax.persistence.Table,..)")
-    public void updatePointcut() {
-    }
-
     @Before("addPointcut()")
     public void beforeAdd(JoinPoint joinPoint) {
         Object model = joinPoint.getArgs()[0];
@@ -86,7 +80,7 @@ public class DeviceRecordAop {
             if (StringUtils.isBlank(tableName)) {
                 // 创建事务
                 DefaultTransactionDefinition transDefinition = new DefaultTransactionDefinition();
-                transDefinition.setPropagationBehavior(DefaultTransactionDefinition.PROPAGATION_REQUIRED);
+                transDefinition.setPropagationBehavior(DefaultTransactionDefinition.PROPAGATION_REQUIRES_NEW);
                 transDefinition.setIsolationLevel(DefaultTransactionDefinition.ISOLATION_READ_COMMITTED);
                 // 设置事务超时时间（秒）
                 transDefinition.setTimeout(5);
@@ -110,6 +104,7 @@ public class DeviceRecordAop {
                             tableName = prefixName + "_1";
                             // 新表注释
                             String tableComment = deviceRecordTableConstant.getTableComment() + "1";
+                            log.info("首创新表{}, threadName = {}", tableName, Thread.currentThread().getName());
                             createDeviceRecordTable(prefixName, tableName, tableComment);
                             // 提交事务
                             platformTransactionManager.commit(transStatus);
@@ -170,6 +165,29 @@ public class DeviceRecordAop {
         }
     }
 
+    @Around("addPointcut()")
+    public Object aroundAdd(ProceedingJoinPoint proceedingJoinPoint) {
+        // 创建事务
+        DefaultTransactionDefinition transDefinition = new DefaultTransactionDefinition();
+        transDefinition.setPropagationBehavior(DefaultTransactionDefinition.PROPAGATION_REQUIRED);
+        transDefinition.setIsolationLevel(DefaultTransactionDefinition.ISOLATION_REPEATABLE_READ);
+        // 设置事务超时时间（秒）
+        transDefinition.setTimeout(5);
+        // 启动事务
+        TransactionStatus transStatus = platformTransactionManager.getTransaction(transDefinition);
+        try {
+            Object result = proceedingJoinPoint.proceed();
+            // 提交事务
+            platformTransactionManager.commit(transStatus);
+            return result;
+        } catch (Throwable throwable) {
+            // 事务回滚
+            platformTransactionManager.rollback(transStatus);
+            log.error("异常：", throwable);
+        }
+        return null;
+    }
+
     @AfterReturning("addPointcut()")
     public void afterReturningAdd(JoinPoint joinPoint) {
         Object model = joinPoint.getArgs()[0];
@@ -184,8 +202,6 @@ public class DeviceRecordAop {
                 return;
             }
             // 更新设备上报数据记录表表信息表中的总行数
-            Condition condition = new Condition(DeviceRecordTableInfo.class);
-            Condition.Criteria criteria;
             DeviceRecordTableInfo updateRecord = new DeviceRecordTableInfo();
             // 检查插入记录返回的id是否是1，是1表示该行是表首行，要记录首行的上报时间
             getMethod = modelClass.getMethod("getId");
@@ -195,37 +211,23 @@ public class DeviceRecordAop {
                 Date recordTime = (Date) getMethod.invoke(model);
                 updateRecord.setStartRecordTime(recordTime);
             }
-            List<DeviceRecordTableInfo> deviceRecordTableInfos;
-            DeviceRecordTableInfo deviceRecordTableInfo;
-            boolean success;
             // 创建事务
             DefaultTransactionDefinition transDefinition = new DefaultTransactionDefinition();
-            transDefinition.setPropagationBehavior(DefaultTransactionDefinition.PROPAGATION_REQUIRED);
+            transDefinition.setPropagationBehavior(DefaultTransactionDefinition.PROPAGATION_REQUIRES_NEW);
             transDefinition.setIsolationLevel(DefaultTransactionDefinition.ISOLATION_READ_COMMITTED);
             // 启动事务
             TransactionStatus transStatus = platformTransactionManager.getTransaction(transDefinition);
-            // 这里有并发竞争，如果更新失败，就重复更新直到成功
-            do {
-                condition.clear();
-                criteria = condition.createCriteria();
-                criteria.andEqualTo("prefixName", prefixName)
-                        .andEqualTo("tableName", tableName);
-                deviceRecordTableInfos = deviceRecordTableInfoMapper.selectByCondition(condition);
-                if (CollectionUtils.isEmpty(deviceRecordTableInfos)) {
-                    log.error("{}表没有对应的表信息，请检查", tableName);
-                    break;
-                }
-                deviceRecordTableInfo = deviceRecordTableInfos.get(0);
-                updateRecord.setRowNumber(deviceRecordTableInfo.getRowNumber() + 1);
-                updateRecord.setVersionNo(deviceRecordTableInfo.getVersionNo() + 1);
-                condition.clear();
-                criteria = condition.createCriteria();
-                criteria.andEqualTo("id", deviceRecordTableInfo.getId())
-                        .andEqualTo("versionNo", deviceRecordTableInfo.getVersionNo());
-                success = deviceRecordTableInfoMapper.updateByConditionSelective(updateRecord, condition) == 1;
-            } while (!success);
-            // 提交事务
-            platformTransactionManager.commit(transStatus);
+            try {
+                // 这里有并发竞争，采用更新直到成功策略
+                updateUntilSuccessful(prefixName, tableName, updateRecord, true);
+                // 提交事务
+                platformTransactionManager.commit(transStatus);
+            } catch (Exception e) {
+                log.error("异常：", e);
+                // 事务回滚
+                platformTransactionManager.rollback(transStatus);
+                return;
+            }
 
             // 检查表行数是否超过阈值，如果超过则创建新表
             DeviceRecordTableConstant deviceRecordTableConstant = DeviceRecordTableConstant.getTableConstant(prefixName);
@@ -242,7 +244,7 @@ public class DeviceRecordAop {
                         try {
                             // 创建事务
                             transDefinition = new DefaultTransactionDefinition();
-                            transDefinition.setPropagationBehavior(DefaultTransactionDefinition.PROPAGATION_REQUIRED);
+                            transDefinition.setPropagationBehavior(DefaultTransactionDefinition.PROPAGATION_REQUIRES_NEW);
                             transDefinition.setIsolationLevel(DefaultTransactionDefinition.ISOLATION_READ_COMMITTED);
                             // 设置事务超时时间（秒）
                             transDefinition.setTimeout(5);
@@ -254,6 +256,7 @@ public class DeviceRecordAop {
                             tableName = prefixName + "_" + nextIndex;
                             // 新表注释
                             String tableComment = deviceRecordTableConstant.getTableComment() + nextIndex;
+                            log.info("超过阈值创建新表{}", tableName);
                             createDeviceRecordTable(prefixName, tableName, tableComment);
                             platformTransactionManager.commit(transStatus);
                             // 同步新表名到缓存
@@ -276,21 +279,6 @@ public class DeviceRecordAop {
         }
     }
 
-    @Before("updatePointcut()")
-    public void beforeUpdate(JoinPoint joinPoint) {
-        log.info("---------- update开始前 ----------");
-        Object model = joinPoint.getArgs()[0];
-        Class<?> modelClass = model.getClass();
-        Table table = modelClass.getAnnotation(Table.class);
-        String prefixName = table.name();
-        try {
-            Method setPrefixName = modelClass.getMethod("setPrefixName", String.class);
-            setPrefixName.invoke(model, prefixName);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            log.error("异常：", e);
-        }
-    }
-
     /**
      * 创建新的设备上报数据记录表
      *
@@ -300,14 +288,7 @@ public class DeviceRecordAop {
      */
     private void createDeviceRecordTable(String prefixName, String tableName, String tableComment) {
         // 获取Mapper
-        String[] prefixNameBlock = prefixName.split("_");
-        StringBuilder mapperNameBuilder = new StringBuilder(prefixNameBlock[0]);
-        for (int i = 1; i < prefixNameBlock.length; i++) {
-            String block = prefixNameBlock[i];
-            mapperNameBuilder.append(Character.toUpperCase(block.charAt(0)))
-                    .append(block.substring(1));
-        }
-        String mapperName = mapperNameBuilder.toString();
+        String mapperName = getMapperName(prefixName);
         TableMapper<?> mapper = BeanHeader.getBean(mapperName);
         assert mapper != null;
         boolean success = mapper.createTable(tableName, tableComment) == 0;
@@ -336,21 +317,121 @@ public class DeviceRecordAop {
      * @param tableName  表名（最新）
      */
     private void updateEndRecordTime(final String prefixName, final String tableName) {
+        if (StringUtils.isBlank(prefixName) || StringUtils.isBlank(tableName)) {
+            String message = I18nMessageUtil.getMessage(LanguageEnum.LANGUAGE_ZH_CN.getLanguage(),
+                    ResponseCodeI18n.PARAMS_ARE_ERROR.getMsg(), BasicConstant.DEFAULT_ERROR_MESSAGE);
+            log.error(message);
+            return;
+        }
         ThreadPoolFactory.COMMON.getPool().execute(() -> {
             // 创建事务
             DefaultTransactionDefinition transDefinition = new DefaultTransactionDefinition();
             transDefinition.setPropagationBehavior(DefaultTransactionDefinition.PROPAGATION_REQUIRED);
             transDefinition.setIsolationLevel(DefaultTransactionDefinition.ISOLATION_READ_COMMITTED);
-            // 设置事务超时时间（秒）
-            transDefinition.setTimeout(5);
             // 启动事务
             TransactionStatus transStatus = platformTransactionManager.getTransaction(transDefinition);
-            String index = tableName.substring(tableName.lastIndexOf("_") + 1);
-            int preIndex = Integer.parseInt(index) - 1;
-            for (int i = preIndex; i > 0; i--) {
-
+            try {
+                String index = tableName.substring(tableName.lastIndexOf("_") + 1);
+                int preIndex = Integer.parseInt(index) - 1;
+                Condition condition = new Condition(DeviceRecordTableInfo.class);
+                Condition.Criteria criteria;
+                DeviceRecordTableInfo updateRecord = new DeviceRecordTableInfo();
+                for (int i = preIndex; i > 0; i--) {
+                    condition.clear();
+                    criteria = condition.createCriteria();
+                    String preTableName = prefixName + "_" + i;
+                    criteria.andEqualTo("prefixName", prefixName)
+                            .andEqualTo("tableName", preTableName);
+                    List<DeviceRecordTableInfo> deviceRecordTableInfos = deviceRecordTableInfoMapper.selectByCondition(condition);
+                    // 表信息不存在，跳过
+                    if (CollectionUtils.isEmpty(deviceRecordTableInfos)) {
+                        log.warn("{}表信息不存在", preTableName);
+                        continue;
+                    }
+                    DeviceRecordTableInfo deviceRecordTableInfo = deviceRecordTableInfos.get(0);
+                    // 末行记录时间已存在，跳过
+                    if (deviceRecordTableInfo.getEndRecordTime() != null) {
+                        continue;
+                    }
+                    // Mapper类名称
+                    String mapperName = getMapperName(prefixName);
+                    TableMapper<?> mapper = BeanHeader.getBean(mapperName);
+                    assert mapper != null;
+                    // 获取设备上报数据记录表最后一条记录的上报时间
+                    Date recordTime = mapper.getLastRecordTime(preTableName);
+                    updateRecord.setEndRecordTime(recordTime);
+                    // 并发竞争的概率很小，以防万一，依然采用更新直到成功的策略
+                    updateUntilSuccessful(prefixName, preTableName, updateRecord, false);
+                }
+                platformTransactionManager.commit(transStatus);
+            } catch (Exception e) {
+                log.error("异常：", e);
+                // 事务回滚
+                platformTransactionManager.rollback(transStatus);
             }
-            platformTransactionManager.commit(transStatus);
         });
+    }
+
+    /**
+     * 获取Mapper类名称
+     *
+     * @param prefixName 前缀名
+     * @return String
+     */
+    private String getMapperName(final String prefixName) {
+        if (StringUtils.isBlank(prefixName)) {
+            String message = I18nMessageUtil.getMessage(LanguageEnum.LANGUAGE_ZH_CN.getLanguage(),
+                    ResponseCodeI18n.PARAMS_ARE_ERROR.getMsg(), BasicConstant.DEFAULT_ERROR_MESSAGE);
+            throw new RuntimeException(message);
+        }
+        String[] prefixNameBlock = prefixName.split("_");
+        StringBuilder mapperNameBuilder = new StringBuilder(prefixNameBlock[0]);
+        for (int i = 1; i < prefixNameBlock.length; i++) {
+            String block = prefixNameBlock[i];
+            mapperNameBuilder.append(Character.toUpperCase(block.charAt(0)))
+                    .append(block.substring(1));
+        }
+        mapperNameBuilder.append("Mapper");
+        return mapperNameBuilder.toString();
+    }
+
+    /**
+     * 更新表信息
+     * <br/>
+     * 更新策略：更新直到成功
+     *
+     * @param prefixName   前缀名
+     * @param tableName    表名
+     * @param updateRecord 更新参数
+     * @param isUpdateRow  是否更新总行数
+     */
+    private void updateUntilSuccessful(String prefixName, String tableName, DeviceRecordTableInfo updateRecord,
+                                       boolean isUpdateRow) {
+        List<DeviceRecordTableInfo> deviceRecordTableInfos;
+        DeviceRecordTableInfo deviceRecordTableInfo;
+        boolean success;
+        Condition condition = new Condition(DeviceRecordTableInfo.class);
+        Condition.Criteria criteria;
+        do {
+            condition.clear();
+            criteria = condition.createCriteria();
+            criteria.andEqualTo("prefixName", prefixName)
+                    .andEqualTo("tableName", tableName);
+            deviceRecordTableInfos = deviceRecordTableInfoMapper.selectByCondition(condition);
+            if (CollectionUtils.isEmpty(deviceRecordTableInfos)) {
+                log.error("{}表没有对应的表信息，请检查", tableName);
+                break;
+            }
+            deviceRecordTableInfo = deviceRecordTableInfos.get(0);
+            if (isUpdateRow) {
+                updateRecord.setRowNumber(deviceRecordTableInfo.getRowNumber() + 1);
+            }
+            updateRecord.setVersionNo(deviceRecordTableInfo.getVersionNo() + 1);
+            condition.clear();
+            criteria = condition.createCriteria();
+            criteria.andEqualTo("id", deviceRecordTableInfo.getId())
+                    .andEqualTo("versionNo", deviceRecordTableInfo.getVersionNo());
+            success = deviceRecordTableInfoMapper.updateByConditionSelective(updateRecord, condition) == 1;
+        } while (!success);
     }
 }

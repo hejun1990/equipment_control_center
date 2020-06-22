@@ -1,7 +1,6 @@
 package com.geekbang.equipment.management.service.impl;
 
 import com.geekbang.equipment.management.constant.BasicConstant;
-import com.geekbang.equipment.management.constant.DeviceRecordTableConstant;
 import com.geekbang.equipment.management.constant.DeviceTypeConstant;
 import com.geekbang.equipment.management.core.Result;
 import com.geekbang.equipment.management.core.ResultGenerator;
@@ -56,17 +55,21 @@ public class DeviceRecordSimulationServiceImpl implements DeviceRecordSimulation
         }
         final List<String> deviceCodeList = sensirionList.stream().map(DeviceInfo::getDeviceCode)
                 .collect(Collectors.toList());
-        final int count = 1000;
+        final int count = 300;
         ThreadPoolFactory.COMMON.getPool().execute(() ->
                 addSensirionRecord(0, count, deviceCodeList, lang));
         ThreadPoolFactory.COMMON.getPool().execute(() ->
                 addSensirionRecord(101, count, deviceCodeList, lang));
+        /*
         ThreadPoolFactory.COMMON.getPool().execute(() ->
                 addSensirionRecord(1002, count, deviceCodeList, lang));
         ThreadPoolFactory.COMMON.getPool().execute(() ->
                 addSensirionRecord(10003, count, deviceCodeList, lang));
         ThreadPoolFactory.COMMON.getPool().execute(() ->
                 addSensirionRecord(100004, count, deviceCodeList, lang));
+        ThreadPoolFactory.COMMON.getPool().execute(() ->
+                addSensirionRecord(1000005, count, deviceCodeList, lang));
+         */
         return ResultGenerator.genSuccessResult();
     }
 
@@ -96,7 +99,7 @@ public class DeviceRecordSimulationServiceImpl implements DeviceRecordSimulation
             deviceSensirionRecord.setHumidity(new BigDecimal(humidity));
             int battery = random.nextInt(100);
             deviceSensirionRecord.setBattery(battery);
-            Date recordTime = new Date(System.nanoTime());
+            Date recordTime = new Date();
             deviceSensirionRecord.setRecordTime(recordTime);
             deviceSensirionRecordService.add(deviceSensirionRecord, lang);
         }

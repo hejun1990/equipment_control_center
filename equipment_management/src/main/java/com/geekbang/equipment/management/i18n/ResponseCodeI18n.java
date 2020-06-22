@@ -35,7 +35,11 @@ public enum ResponseCodeI18n {
     /**
      * 表名为空
      */
-    TABLE_NAME_IS_NULL(100012, "api.response.table.name.is.null");
+    TABLE_NAME_IS_NULL(100012, "api.response.table.name.is.null"),
+    /**
+     * 参数不正确
+     */
+    PARAMS_ARE_ERROR(100013, "api.response.params.are.error");
 
     /**
      * 返回码
