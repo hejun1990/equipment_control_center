@@ -28,10 +28,11 @@ public class MybatisConfigurer {
         factory.setDataSource(dataSource);
         factory.setTypeAliasesPackage(MODEL_PACKAGE);
 
-        //添加XML目录
+        // 添加XML目录
         ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         factory.setMapperLocations(resolver.getResources("classpath:mapper/*.xml"));
 
+        // 添加自定义Configuration
         factory.setConfiguration(new CustomizeMyBatisConfiguration());
         return factory.getObject();
     }
