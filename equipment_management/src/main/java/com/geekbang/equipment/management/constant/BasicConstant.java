@@ -20,4 +20,9 @@ public class BasicConstant {
      * 默认失败消息
      */
     public static final String DEFAULT_ERROR_MESSAGE = "FAIL";
+
+    /**
+     * 表字段-建表语句
+     */
+    public static final String TABLE_FIELD_CREATE_TABLE = "Create Table";
 }

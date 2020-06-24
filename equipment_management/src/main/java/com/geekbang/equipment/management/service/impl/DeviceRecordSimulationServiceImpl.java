@@ -55,17 +55,19 @@ public class DeviceRecordSimulationServiceImpl implements DeviceRecordSimulation
         }
         final List<String> deviceCodeList = sensirionList.stream().map(DeviceInfo::getDeviceCode)
                 .collect(Collectors.toList());
-        final int count = 300;
+        final int count = 200;
         ThreadPoolFactory.COMMON.getPool().execute(() ->
                 addSensirionRecord(0, count, deviceCodeList, lang));
         ThreadPoolFactory.COMMON.getPool().execute(() ->
                 addSensirionRecord(101, count, deviceCodeList, lang));
         ThreadPoolFactory.COMMON.getPool().execute(() ->
                 addSensirionRecord(1002, count, deviceCodeList, lang));
+        /*
         ThreadPoolFactory.COMMON.getPool().execute(() ->
                 addSensirionRecord(10003, count, deviceCodeList, lang));
         ThreadPoolFactory.COMMON.getPool().execute(() ->
                 addSensirionRecord(100004, count, deviceCodeList, lang));
+         */
         return ResultGenerator.genSuccessResult();
     }
 

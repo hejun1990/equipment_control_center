@@ -29,6 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -103,9 +104,10 @@ public class DeviceRecordAop {
                             // 新表表名
                             tableName = prefixName + "_1";
                             // 新表注释
-                            String tableComment = deviceRecordTableConstant.getTableComment() + "1";
+                            String basicComment = deviceRecordTableConstant.getTableComment();
+                            String tableComment = basicComment + "1";
                             log.info("首创新表{}, threadName = {}", tableName, Thread.currentThread().getName());
-                            createDeviceRecordTable(prefixName, tableName, tableComment);
+                            createDeviceRecordTable(prefixName, basicComment, tableName, tableComment);
                             // 提交事务
                             platformTransactionManager.commit(transStatus);
                         }
@@ -255,9 +257,10 @@ public class DeviceRecordAop {
                             int nextIndex = Integer.parseInt(index) + 1;
                             tableName = prefixName + "_" + nextIndex;
                             // 新表注释
-                            String tableComment = deviceRecordTableConstant.getTableComment() + nextIndex;
+                            String basicComment = deviceRecordTableConstant.getTableComment();
+                            String tableComment = basicComment + nextIndex;
                             log.info("超过阈值创建新表{}", tableName);
-                            createDeviceRecordTable(prefixName, tableName, tableComment);
+                            createDeviceRecordTable(prefixName, basicComment, tableName, tableComment);
                             platformTransactionManager.commit(transStatus);
                             // 同步新表名到缓存
                             deviceRecordTableConstant.setTableName(tableName);
@@ -283,26 +286,34 @@ public class DeviceRecordAop {
      * 创建新的设备上报数据记录表
      *
      * @param prefixName   前缀名
-     * @param tableName    表名
-     * @param tableComment 表注释
+     * @param basicComment 表注释
+     * @param tableName    新表名
+     * @param tableComment 新表注释
      */
-    private void createDeviceRecordTable(String prefixName, String tableName, String tableComment) {
+    private void createDeviceRecordTable(String prefixName, String basicComment, String tableName, String tableComment) {
         // 获取Mapper
         String mapperName = getMapperName(prefixName);
         TableMapper<?> mapper = BeanHeader.getBean(mapperName);
         assert mapper != null;
-        boolean success = mapper.createTable(tableName, tableComment) == 0;
-        if (!success) {
+        // 获取建表语句
+        Map<String, String> createSqlMap = mapper.getCreateTableInfo(prefixName);
+        if (createSqlMap == null || !createSqlMap.containsKey(BasicConstant.TABLE_FIELD_CREATE_TABLE)) {
             String message = I18nMessageUtil.getMessage(LanguageEnum.LANGUAGE_ZH_CN.getLanguage(),
                     ResponseCodeI18n.CREATE_TABLE_FAIL.getMsg(), BasicConstant.DEFAULT_ERROR_MESSAGE);
             throw new RuntimeException(message);
         }
+        String createSql = createSqlMap.get(BasicConstant.TABLE_FIELD_CREATE_TABLE);
+        // 替换建表语句的“表名”和“注释”
+        createSql = createSql.replaceFirst(prefixName, tableName)
+                .replaceFirst(basicComment, tableComment);
+        // 执行建表语句
+        mapper.createTable(createSql);
         // 新增表信息
         DeviceRecordTableInfo createRecord = new DeviceRecordTableInfo();
         createRecord.setPrefixName(prefixName);
         createRecord.setTableName(tableName);
         createRecord.setRowNumber(0);
-        success = deviceRecordTableInfoMapper.insertSelective(createRecord) == 1;
+        boolean success = deviceRecordTableInfoMapper.insertSelective(createRecord) == 1;
         if (!success) {
             String message = I18nMessageUtil.getMessage(LanguageEnum.LANGUAGE_ZH_CN.getLanguage(),
                     ResponseCodeI18n.INSERT_FAIL.getMsg(), BasicConstant.DEFAULT_ERROR_MESSAGE);
