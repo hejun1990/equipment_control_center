@@ -12,16 +12,4 @@
         <result column="battery" jdbcType="SMALLINT" property="battery"/>
         <result column="record_time" jdbcType="TIMESTAMP" property="recordTime"/>
     </resultMap>
-
-    <!-- 动态插入数据记录 -->
-    <insert id="addRecord" parameterType="com.geekbang.equipment.management.model.DeviceSensirionRecord"
-            useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO `${tableName}` (`device_code`,
-                                    `temperature`,
-                                    `humidity`,
-                                    `battery`,
-                                    `record_time`)
-        VALUES (#{deviceCode,jdbcType=VARCHAR}, #{temperature,jdbcType=DECIMAL}, #{humidity,jdbcType=DECIMAL},
-                #{battery,jdbcType=SMALLINT}, #{recordTime,jdbcType=TIMESTAMP})
-    </insert>
 </mapper>

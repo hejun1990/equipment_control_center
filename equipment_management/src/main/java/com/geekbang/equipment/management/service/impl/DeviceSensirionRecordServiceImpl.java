@@ -41,7 +41,7 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
         if (check != null) {
             return check;
         }
-        boolean success = deviceSensirionRecordMapper.addRecord(record) == 1;
+        boolean success = deviceSensirionRecordMapper.insertRecord(record) == 1;
         if (!success) {
             return ResultGenerator.genFailResult(ResponseCodeI18n.INSERT_FAIL.getMsg(), lang);
         }

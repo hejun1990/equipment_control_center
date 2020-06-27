@@ -8,6 +8,7 @@ import com.geekbang.equipment.management.i18n.I18nMessageUtil;
 import com.geekbang.equipment.management.i18n.LanguageEnum;
 import com.geekbang.equipment.management.i18n.ResponseCodeI18n;
 import com.geekbang.equipment.management.model.DeviceRecordTableInfo;
+import com.geekbang.equipment.management.model.TableEntity;
 import com.geekbang.equipment.management.util.BeanHeader;
 import com.geekbang.equipment.management.util.ThreadPoolFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -162,6 +163,8 @@ public class DeviceRecordAop {
                 // 给第一个参数设置“表名”
                 setMethod.invoke(model, tableName);
             }
+            // 缓存表字段
+            storeTableColumns(deviceRecordTableConstant, model);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             log.error("异常：", e);
         }
@@ -318,6 +321,45 @@ public class DeviceRecordAop {
             String message = I18nMessageUtil.getMessage(LanguageEnum.LANGUAGE_ZH_CN.getLanguage(),
                     ResponseCodeI18n.INSERT_FAIL.getMsg(), BasicConstant.DEFAULT_ERROR_MESSAGE);
             throw new RuntimeException(message);
+        }
+    }
+
+    /**
+     * 缓存表字段
+     *
+     * @param deviceRecordTableConstant DeviceRecordTableConstant
+     * @param model                     Object
+     */
+    private void storeTableColumns(DeviceRecordTableConstant deviceRecordTableConstant, Object model) {
+        if (CollectionUtils.isEmpty(deviceRecordTableConstant.getColumns())) {
+            deviceRecordTableConstant.lock.lock();
+            try {
+                if (CollectionUtils.isEmpty(deviceRecordTableConstant.getColumns())) {
+                    String mapperName = getMapperName(deviceRecordTableConstant.getPrefixName());
+                    TableMapper<?> mapper = BeanHeader.getBean(mapperName);
+                    assert mapper != null;
+                    if (model instanceof TableEntity) {
+                        TableEntity tableEntity = (TableEntity) model;
+                        List<Map<String, String>> columnMapList = mapper.getTableColumns(tableEntity);
+                        if (CollectionUtils.isEmpty(columnMapList)) {
+                            log.error("获取表[{}]字段失败", deviceRecordTableConstant.getPrefixName());
+                            String message = I18nMessageUtil.getMessage(LanguageEnum.LANGUAGE_ZH_CN.getLanguage(),
+                                    ResponseCodeI18n.DATA_IS_NULL.getMsg(), BasicConstant.DEFAULT_ERROR_MESSAGE);
+                            throw new RuntimeException(message);
+                        }
+                        List<String> columns = columnMapList.stream().map(stringMap -> stringMap.get("column_name"))
+                                .filter(s -> !"id".equals(s)).collect(Collectors.toList());
+                        deviceRecordTableConstant.setColumns(columns);
+                    } else {
+                        log.error("入参没有继承TableEntity");
+                        String message = I18nMessageUtil.getMessage(LanguageEnum.LANGUAGE_ZH_CN.getLanguage(),
+                                ResponseCodeI18n.PARAMS_ARE_ERROR.getMsg(), BasicConstant.DEFAULT_ERROR_MESSAGE);
+                        throw new RuntimeException(message);
+                    }
+                }
+            } finally {
+                deviceRecordTableConstant.lock.unlock();
+            }
         }
     }
 

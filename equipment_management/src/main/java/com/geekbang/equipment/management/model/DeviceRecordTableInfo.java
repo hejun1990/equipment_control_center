@@ -3,6 +3,7 @@ package com.geekbang.equipment.management.model;
 import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.Date;
 import javax.persistence.*;
 
@@ -13,7 +14,10 @@ import javax.persistence.*;
  */
 @Table(name = "device_record_table_info")
 @Data
-public class DeviceRecordTableInfo {
+public class DeviceRecordTableInfo implements Serializable {
+
+    private static final long serialVersionUID = -8602946430864678897L;
+
     /**
      * 主键id
      */

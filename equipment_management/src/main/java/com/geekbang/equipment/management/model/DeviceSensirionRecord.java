@@ -13,7 +13,7 @@ import java.util.Date;
  *
  * @author jun_h
  */
-@Table(name = "device_sensirion_record")
+@Table(name = "device_sensirion_record", schema = "equipment_control_center")
 @Data
 public class DeviceSensirionRecord extends TableEntity implements Serializable {
 

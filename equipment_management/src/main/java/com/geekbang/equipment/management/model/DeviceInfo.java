@@ -4,6 +4,7 @@ import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -13,7 +14,10 @@ import java.util.Date;
  */
 @Table(name = "device_info")
 @Data
-public class DeviceInfo {
+public class DeviceInfo implements Serializable {
+
+    private static final long serialVersionUID = 800418378285399025L;
+
     /**
      * 主键ID
      */

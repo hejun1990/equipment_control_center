@@ -2,6 +2,7 @@ package com.geekbang.equipment.management.constant;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.StampedLock;
@@ -39,12 +40,17 @@ public enum DeviceRecordTableConstant {
     private final int rowThreshold;
 
     /**
+     * 表字段
+     */
+    private List<String> columns;
+
+    /**
      * 重入锁
      */
     public final Lock lock = new ReentrantLock(true);
 
     /**
-     * 读写锁
+     * 读写锁（乐观）
      */
     private final StampedLock stampedLock = new StampedLock();
 
@@ -92,6 +98,14 @@ public enum DeviceRecordTableConstant {
             }
         }
         return tableName;
+    }
+
+    public List<String> getColumns() {
+        return columns;
+    }
+
+    public void setColumns(List<String> columns) {
+        this.columns = columns;
     }
 
     /**
