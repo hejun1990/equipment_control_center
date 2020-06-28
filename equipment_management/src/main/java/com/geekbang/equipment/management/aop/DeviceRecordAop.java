@@ -208,10 +208,10 @@ public class DeviceRecordAop {
             }
             // 更新设备上报数据记录表表信息表中的总行数
             DeviceRecordTableInfo updateRecord = new DeviceRecordTableInfo();
-            // 检查插入记录返回的id是否是1，是1表示该行是表首行，要记录首行的上报时间
+            // 获取数据上报时间
             getMethod = modelClass.getMethod("getId");
             Integer id = (Integer) getMethod.invoke(model);
-            if (id == 1) {
+            if (id != null && id > 0) {
                 getMethod = modelClass.getMethod("getRecordTime");
                 Date recordTime = (Date) getMethod.invoke(model);
                 updateRecord.setStartRecordTime(recordTime);
@@ -478,6 +478,17 @@ public class DeviceRecordAop {
             deviceRecordTableInfo = deviceRecordTableInfos.get(0);
             if (isUpdateRow) {
                 updateRecord.setRowNumber(deviceRecordTableInfo.getRowNumber() + 1);
+            }
+            // 判断是否需要更新首行时间
+            // 1、首行时间为空，更新为当前插入行的上报时间
+            // 2、首行时间比当前插入行的上报时间大，更新为当前插入行的上报时间
+            if (updateRecord.getStartRecordTime() != null) {
+                Date curStartRecordTime = deviceRecordTableInfo.getStartRecordTime();
+                if (curStartRecordTime != null) {
+                    if (curStartRecordTime.compareTo(updateRecord.getStartRecordTime()) < 1) {
+                        updateRecord.setStartRecordTime(null);
+                    }
+                }
             }
             updateRecord.setVersionNo(deviceRecordTableInfo.getVersionNo() + 1);
             condition.clear();

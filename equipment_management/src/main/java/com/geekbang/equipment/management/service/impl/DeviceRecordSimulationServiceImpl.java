@@ -67,7 +67,7 @@ public class DeviceRecordSimulationServiceImpl implements DeviceRecordSimulation
                 .collect(Collectors.toList());
         final List<String> electricityDeviceCodeList = electricityList.stream().map(DeviceInfo::getDeviceCode)
                 .collect(Collectors.toList());
-        final int count = 250;
+        final int count = 2400;
         // 温湿度
         ThreadPoolFactory.COMMON.getPool().execute(() ->
                 addSensirionRecord(0, count, sensirionDeviceCodeList, lang));

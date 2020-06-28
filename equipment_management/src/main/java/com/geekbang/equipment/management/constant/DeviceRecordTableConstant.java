@@ -27,7 +27,7 @@ public enum DeviceRecordTableConstant {
     /**
      * 行数阈值
      */
-    public static final int ROW_THRESHOLD = 200;
+    public static final int ROW_THRESHOLD = 2000;
 
     /**
      * 前缀名
