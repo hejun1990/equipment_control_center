@@ -6,7 +6,7 @@ import com.geekbang.equipment.management.model.DeviceSensirionRecord;
 /**
  * 温湿度设备数据上报记录Mapper
  *
- * @author jun_h
+ * @author hejun
  */
 public interface DeviceSensirionRecordMapper extends TableMapper<DeviceSensirionRecord> {
 }

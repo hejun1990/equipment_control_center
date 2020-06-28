@@ -11,10 +11,10 @@ import com.geekbang.equipment.management.core.Result;
 public interface DeviceRecordSimulationService {
 
     /**
-     * 模拟温湿度数据上报
+     * 模拟设备数据上报
      *
      * @param lang 国际化语言
      * @return Result
      */
-    Result<?> simulationSensirion(String lang);
+    Result<?> simulationDeviceRecordPush(String lang);
 }

@@ -10,7 +10,12 @@ public enum DeviceTypeConstant {
     /**
      * 温湿度
      */
-    SENSIRION("2101", "温湿度");
+    SENSIRION("2101", "温湿度"),
+
+    /**
+     * 电表
+     */
+    ELECTRICITY("1901", "电表");
 
     DeviceTypeConstant(String deviceTypeNo, String deviceTypeName) {
         this.deviceTypeNo = deviceTypeNo;

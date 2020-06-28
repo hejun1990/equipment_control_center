@@ -23,13 +23,13 @@ public class DeviceRecordSimulationController {
     private DeviceRecordSimulationService deviceRecordSimulationService;
 
     /**
-     * 模拟温湿度数据上报
+     * 模拟设备数据上报
      *
      * @param lang 国际化语言
      * @return Result
      */
     @GetMapping
-    public Result<?> simulationSensirion(@PathVariable(value = "lang") String lang) {
-        return deviceRecordSimulationService.simulationSensirion(lang);
+    public Result<?> simulationDeviceRecordPush(@PathVariable(value = "lang") String lang) {
+        return deviceRecordSimulationService.simulationDeviceRecordPush(lang);
     }
 }

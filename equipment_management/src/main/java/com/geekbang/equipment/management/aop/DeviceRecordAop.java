@@ -240,7 +240,7 @@ public class DeviceRecordAop {
                 log.error("前缀名[{}]，未匹配到对应的设备上报数据记录表表信息常量", prefixName);
                 return;
             }
-            if (updateRecord.getRowNumber() > deviceRecordTableConstant.getRowThreshold()) {
+            if (updateRecord.getRowNumber() > DeviceRecordTableConstant.ROW_THRESHOLD) {
                 // 检查缓存的表名是否和当前的插入表名一致，如果一致，可以创建新表。
                 // 如果不一致，说明新表已被别的线程创建，则不必再创建
                 if (tableName.equals(deviceRecordTableConstant.getTableName())) {

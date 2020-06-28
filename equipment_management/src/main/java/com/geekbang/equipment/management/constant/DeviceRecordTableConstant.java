@@ -17,7 +17,17 @@ public enum DeviceRecordTableConstant {
     /**
      * 温湿度设备数据上报记录表
      */
-    SENSIRION("device_sensirion_record", "温湿度设备数据上报记录表", 200);
+    SENSIRION("device_sensirion_record", "温湿度设备数据上报记录表"),
+
+    /**
+     * 电监测设备数据上报记录表
+     */
+    ELECTRICITY("device_electricity_record", "温湿度设备数据上报记录表");
+
+    /**
+     * 行数阈值
+     */
+    public static final int ROW_THRESHOLD = 200;
 
     /**
      * 前缀名
@@ -35,11 +45,6 @@ public enum DeviceRecordTableConstant {
     private volatile String tableName;
 
     /**
-     * 行数阈值
-     */
-    private final int rowThreshold;
-
-    /**
      * 表字段
      */
     private List<String> columns;
@@ -54,10 +59,9 @@ public enum DeviceRecordTableConstant {
      */
     private final StampedLock stampedLock = new StampedLock();
 
-    DeviceRecordTableConstant(String prefixName, String tableComment, int rowThreshold) {
+    DeviceRecordTableConstant(String prefixName, String tableComment) {
         this.prefixName = prefixName;
         this.tableComment = tableComment;
-        this.rowThreshold = rowThreshold;
     }
 
     public String getPrefixName() {
@@ -66,10 +70,6 @@ public enum DeviceRecordTableConstant {
 
     public String getTableComment() {
         return tableComment;
-    }
-
-    public int getRowThreshold() {
-        return rowThreshold;
     }
 
     public void setTableName(String tableName) {

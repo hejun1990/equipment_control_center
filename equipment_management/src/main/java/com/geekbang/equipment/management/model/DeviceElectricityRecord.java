@@ -1,6 +1,5 @@
 package com.geekbang.equipment.management.model;
 
-import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -9,16 +8,14 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * 温湿度设备数据上报记录表
+ * 电监测设备数据上报记录表
  *
  * @author hejun
  */
-@Table(name = "device_sensirion_record", schema = "equipment_control_center")
+@Table(name = "device_electricity_record", schema = "equipment_control_center")
 @Data
-public class DeviceSensirionRecord extends TableEntity implements Serializable {
-
-    private static final long serialVersionUID = -1785245250765406347L;
-
+public class DeviceElectricityRecord extends TableEntity implements Serializable {
+    private static final long serialVersionUID = 7159660141229463457L;
     /**
      * 主键id
      */
@@ -33,24 +30,29 @@ public class DeviceSensirionRecord extends TableEntity implements Serializable {
     private String deviceCode;
 
     /**
-     * 温度
+     * 止码
      */
-    private BigDecimal temperature;
+    private BigDecimal degree;
 
     /**
-     * 湿度
+     * 功率
      */
-    private BigDecimal humidity;
+    @Column(name = "power_rate")
+    private BigDecimal powerRate;
 
     /**
-     * 电池电量(0-100)
+     * 电流
      */
-    private Integer battery;
+    private BigDecimal current;
+
+    /**
+     * 电压
+     */
+    private BigDecimal voltage;
 
     /**
      * 上报时间
      */
     @Column(name = "record_time")
-    @JSONField(format = "yyyy-MM-dd HH:mm:ss.ssssss")
     private Date recordTime;
 }
