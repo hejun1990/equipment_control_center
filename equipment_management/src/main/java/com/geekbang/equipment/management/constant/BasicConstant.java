@@ -25,4 +25,19 @@ public class BasicConstant {
      * 表字段-建表语句
      */
     public static final String TABLE_FIELD_CREATE_TABLE = "Create Table";
+
+    /**
+     * 线程池类型-普通
+     */
+    public static final String THREAD_POOL_COMMON = "common";
+
+    /**
+     * 线程池类型-无阻塞队列
+     */
+    public static final String THREAD_POOL_CACHED = "cached";
+
+    /**
+     * 线程池类型-固定线程数
+     */
+    public static final String THREAD_POOL_FIXED = "fixed";
 }

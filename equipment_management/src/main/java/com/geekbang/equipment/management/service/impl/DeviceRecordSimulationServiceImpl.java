@@ -69,26 +69,26 @@ public class DeviceRecordSimulationServiceImpl implements DeviceRecordSimulation
                 .collect(Collectors.toList());
         final int count = 2400;
         // 温湿度
-        ThreadPoolFactory.COMMON.getPool().execute(() ->
+        ThreadPoolFactory.CACHED.getPool().execute(() ->
                 addSensirionRecord(0, count, sensirionDeviceCodeList, lang));
-        ThreadPoolFactory.COMMON.getPool().execute(() ->
+        ThreadPoolFactory.CACHED.getPool().execute(() ->
                 addSensirionRecord(101, count, sensirionDeviceCodeList, lang));
-        ThreadPoolFactory.COMMON.getPool().execute(() ->
+        ThreadPoolFactory.CACHED.getPool().execute(() ->
                 addSensirionRecord(1002, count, sensirionDeviceCodeList, lang));
-        ThreadPoolFactory.COMMON.getPool().execute(() ->
+        ThreadPoolFactory.CACHED.getPool().execute(() ->
                 addSensirionRecord(10003, count, sensirionDeviceCodeList, lang));
-        ThreadPoolFactory.COMMON.getPool().execute(() ->
+        ThreadPoolFactory.CACHED.getPool().execute(() ->
                 addSensirionRecord(100004, count, sensirionDeviceCodeList, lang));
         // 电表
-        ThreadPoolFactory.COMMON.getPool().execute(() ->
+        ThreadPoolFactory.CACHED.getPool().execute(() ->
                 addElectricityRecord(1000005, count, electricityDeviceCodeList, lang));
-        ThreadPoolFactory.COMMON.getPool().execute(() ->
+        ThreadPoolFactory.CACHED.getPool().execute(() ->
                 addElectricityRecord(10000006, count, electricityDeviceCodeList, lang));
-        ThreadPoolFactory.COMMON.getPool().execute(() ->
+        ThreadPoolFactory.CACHED.getPool().execute(() ->
                 addElectricityRecord(100000007, count, electricityDeviceCodeList, lang));
-        ThreadPoolFactory.COMMON.getPool().execute(() ->
+        ThreadPoolFactory.CACHED.getPool().execute(() ->
                 addElectricityRecord(1000000008, count, electricityDeviceCodeList, lang));
-        ThreadPoolFactory.COMMON.getPool().execute(() ->
+        ThreadPoolFactory.CACHED.getPool().execute(() ->
                 addElectricityRecord(1100000001, count, electricityDeviceCodeList, lang));
         return ResultGenerator.genSuccessResult();
     }
