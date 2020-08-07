@@ -3,6 +3,7 @@ package com.geekbang.equipment.management.service;
 import com.geekbang.equipment.management.core.Result;
 import com.geekbang.equipment.management.core.Service;
 import com.geekbang.equipment.management.model.DeviceSensirionRecord;
+import com.geekbang.equipment.management.model.vo.DeviceSensirionRecordVO;
 
 
 /**
@@ -56,5 +57,5 @@ public interface DeviceSensirionRecordService extends Service<DeviceSensirionRec
      * @param lang   国际化语言
      * @return Result
      */
-    Result<?> list(Integer page, Integer size, DeviceSensirionRecord record, String lang);
+    Result<?> list(Integer page, Integer size, DeviceSensirionRecordVO record, String lang);
 }

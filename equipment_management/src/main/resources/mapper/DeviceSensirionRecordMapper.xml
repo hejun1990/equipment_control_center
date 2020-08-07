@@ -12,4 +12,24 @@
         <result column="battery" jdbcType="SMALLINT" property="battery"/>
         <result column="record_time" jdbcType="TIMESTAMP" property="recordTime"/>
     </resultMap>
+
+    <!-- 动态查询表记录 -->
+    <select id="selectDynamic" parameterType="com.geekbang.equipment.management.model.vo.DeviceSensirionRecordVO"
+            resultMap="BaseResultMap">
+        select
+        id as id,
+        device_code as deviceCode,
+        temperature as temperature,
+        humidity as humidity,
+        battery as battery,
+        record_time as recordTime
+        from ${tableName}
+        <where>
+            <if test="deviceCode != null and deviceCode != ''">
+                and device_code = #{deviceCode,jdbcType=VARCHAR}
+            </if>
+        </where>
+        order by record_time desc
+        limit #{offset}, #{rows}
+    </select>
 </mapper>

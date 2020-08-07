@@ -40,11 +40,14 @@ public enum ResponseCodeI18n {
      * 参数不正确
      */
     PARAMS_ARE_ERROR(100013, "api.response.params.are.error"),
-
     /**
      * 数据库名为空
      */
-    TABLE_SCHEMA_IS_NULL(100014, "api.response.table.schema.is.null");
+    TABLE_SCHEMA_IS_NULL(100014, "api.response.table.schema.is.null"),
+    /**
+     * 设备编码为空
+     */
+    DEVICE_CODE_IS_NULL(100015, "api.response.device.code.is.null");
 
     /**
      * 返回码

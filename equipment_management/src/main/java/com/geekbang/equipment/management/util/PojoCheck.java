@@ -22,10 +22,10 @@ public class PojoCheck {
      */
     public static Result<?> tableCheck(TableEntity entity, String lang) {
         if (StringUtils.isBlank(entity.getPrefixName())) {
-            return ResultGenerator.genFailResult(ResponseCodeI18n.DATA_IS_NULL.getMsg(), lang);
+            return ResultGenerator.genFailResult(ResponseCodeI18n.TABLE_PREFIX_NAME_IS_NULL.getMsg(), lang);
         }
         if (StringUtils.isBlank(entity.getTableName())) {
-            return ResultGenerator.genFailResult(ResponseCodeI18n.DATA_IS_NULL.getMsg(), lang);
+            return ResultGenerator.genFailResult(ResponseCodeI18n.TABLE_NAME_IS_NULL.getMsg(), lang);
         }
         return null;
     }

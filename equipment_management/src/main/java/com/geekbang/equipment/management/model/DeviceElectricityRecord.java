@@ -1,6 +1,7 @@
 package com.geekbang.equipment.management.model;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -14,6 +15,7 @@ import java.util.Date;
  */
 @Table(name = "device_electricity_record", schema = "equipment_control_center")
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class DeviceElectricityRecord extends TableEntity implements Serializable {
     private static final long serialVersionUID = 7159660141229463457L;
     /**

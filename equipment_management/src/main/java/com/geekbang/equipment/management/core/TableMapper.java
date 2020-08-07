@@ -70,6 +70,16 @@ public interface TableMapper<T> extends Mapper<T> {
     int insertRecord(TableEntity tableEntity);
 
     /**
+     * 通过设备编号查询某记录表中记录总数
+     *
+     * @param tableName  表名
+     * @param deviceCode 设备编码
+     * @return 记录总数
+     */
+    @Select("SELECT COUNT(*) FROM `${tableName}` WHERE device_code = #{deviceCode, jdbcType=VARCHAR}")
+    int getRecordCountByCode(@Param("tableName") String tableName, @Param("deviceCode") String deviceCode);
+
+    /**
      * 拼接SQL语句类
      */
     class MySqlBuilder {

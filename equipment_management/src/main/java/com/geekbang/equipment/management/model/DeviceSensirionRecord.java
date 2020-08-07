@@ -2,6 +2,7 @@ package com.geekbang.equipment.management.model;
 
 import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -15,6 +16,7 @@ import java.util.Date;
  */
 @Table(name = "device_sensirion_record", schema = "equipment_control_center")
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class DeviceSensirionRecord extends TableEntity implements Serializable {
 
     private static final long serialVersionUID = -1785245250765406347L;
