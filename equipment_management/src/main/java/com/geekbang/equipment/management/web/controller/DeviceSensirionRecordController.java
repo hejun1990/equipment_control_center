@@ -2,8 +2,8 @@ package com.geekbang.equipment.management.web.controller;
 
 import com.geekbang.equipment.management.core.Result;
 import com.geekbang.equipment.management.model.DeviceSensirionRecord;
-import com.geekbang.equipment.management.service.DeviceSensirionRecordService;
 import com.geekbang.equipment.management.model.vo.DeviceSensirionRecordVO;
+import com.geekbang.equipment.management.service.DeviceSensirionRecordService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 

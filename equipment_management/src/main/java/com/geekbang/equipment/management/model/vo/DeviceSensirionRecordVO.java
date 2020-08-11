@@ -8,7 +8,7 @@ import lombok.ToString;
 import java.io.Serializable;
 
 /**
- * 温湿度设备数据VO
+ * 温湿度设备数据上报记录表
  *
  * @author hejun
  */
@@ -17,7 +17,7 @@ import java.io.Serializable;
 @ToString
 public class DeviceSensirionRecordVO extends DeviceSensirionRecord implements Serializable {
 
-    private static final long serialVersionUID = 6288560166325218332L;
+    private static final long serialVersionUID = -5848681023462172141L;
 
     /**
      * 查询开始时间
@@ -28,14 +28,4 @@ public class DeviceSensirionRecordVO extends DeviceSensirionRecord implements Se
      * 查询结束时间
      */
     private String queryEndTime;
-
-    /**
-     * 分页偏移量
-     */
-    private Integer offset;
-
-    /**
-     * 分页行数
-     */
-    private Integer rows;
 }

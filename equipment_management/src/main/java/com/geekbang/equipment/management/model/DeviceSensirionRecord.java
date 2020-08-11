@@ -1,6 +1,6 @@
 package com.geekbang.equipment.management.model;
 
-import com.alibaba.fastjson.annotation.JSONField;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -53,6 +53,6 @@ public class DeviceSensirionRecord extends TableEntity implements Serializable {
      * 上报时间
      */
     @Column(name = "record_time")
-    @JSONField(format = "yyyy-MM-dd HH:mm:ss.ssssss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss.SSS", timezone = "GMT+8")
     private Date recordTime;
 }

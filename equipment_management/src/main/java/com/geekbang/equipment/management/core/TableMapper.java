@@ -7,10 +7,12 @@ import com.geekbang.equipment.management.i18n.I18nMessageUtil;
 import com.geekbang.equipment.management.i18n.LanguageEnum;
 import com.geekbang.equipment.management.i18n.ResponseCodeI18n;
 import com.geekbang.equipment.management.model.TableEntity;
+import com.geekbang.equipment.management.model.vo.DistributedQueryVO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.jdbc.SQL;
 import org.springframework.util.CollectionUtils;
+import tk.mybatis.mapper.entity.Condition;
 
 import javax.persistence.Table;
 import java.util.Date;
@@ -70,14 +72,23 @@ public interface TableMapper<T> extends Mapper<T> {
     int insertRecord(TableEntity tableEntity);
 
     /**
-     * 通过设备编号查询某记录表中记录总数
+     * 查询记录总数
      *
-     * @param tableName  表名
-     * @param deviceCode 设备编码
-     * @return 记录总数
+     * @param tableName 表名
+     * @param condition 查询条件
+     * @return int
      */
-    @Select("SELECT COUNT(*) FROM `${tableName}` WHERE device_code = #{deviceCode, jdbcType=VARCHAR}")
-    int getRecordCountByCode(@Param("tableName") String tableName, @Param("deviceCode") String deviceCode);
+    @SelectProvider(type = MySqlBuilder.class, method = "getRecordCountByConditionSql")
+    int getRecordCountByCondition(String tableName, Condition condition);
+
+    /**
+     * 查询记录
+     *
+     * @param vo 查询参数
+     * @return List
+     */
+    @SelectProvider(type = MySqlBuilder.class, method = "selectRecordByConditionSql")
+    List<Map<String, Object>> selectRecordByCondition(DistributedQueryVO vo);
 
     /**
      * 拼接SQL语句类
@@ -137,6 +148,80 @@ public interface TableMapper<T> extends Mapper<T> {
                         valuName = column;
                     }
                     VALUES(column, "#{" + valuName + "}");
+                }
+            }}.toString();
+        }
+
+        public static String getRecordCountByConditionSql(String tableName, Condition condition) {
+            if (StringUtils.isBlank(tableName)) {
+                String message = I18nMessageUtil.getMessage(LanguageEnum.LANGUAGE_ZH_CN.getLanguage(),
+                        ResponseCodeI18n.PARAMS_ARE_ERROR.getMsg(), BasicConstant.DEFAULT_ERROR_MESSAGE);
+                throw new RuntimeException(message);
+            }
+            return new SQL() {{
+                SELECT("count(*)");
+                FROM(tableName);
+                if (condition != null) {
+                    List<Condition.Criteria> criteriaList = condition.getOredCriteria();
+                    Condition.Criteria criteria0 = criteriaList.get(0);
+                    List<Condition.Criterion> criterionList = criteria0.getCriteria();
+                    String[] conditions = new String[criterionList.size()];
+                    for (int i = 0; i < criterionList.size(); i++) {
+                        Condition.Criterion criterion = criterionList.get(0);
+                        StringBuilder conditionBuilder = new StringBuilder();
+                        conditionBuilder.append(criterion.getCondition())
+                                .append("'").append(criterion.getValue()).append("'");
+                        if (criterion.getSecondValue() != null) {
+                            conditionBuilder.append(" and '").append(criterion.getSecondValue()).append("'");
+                        }
+                        conditions[i] = conditionBuilder.toString();
+                    }
+                    if (conditions.length > 0) {
+                        WHERE(conditions);
+                    }
+                }
+            }}.toString();
+        }
+
+        public static String selectRecordByConditionSql(DistributedQueryVO vo) {
+            String tableName = vo.getTableName();
+            if (StringUtils.isBlank(tableName)) {
+                String message = I18nMessageUtil.getMessage(LanguageEnum.LANGUAGE_ZH_CN.getLanguage(),
+                        ResponseCodeI18n.PARAMS_ARE_ERROR.getMsg(), BasicConstant.DEFAULT_ERROR_MESSAGE);
+                throw new RuntimeException(message);
+            }
+            return new SQL() {{
+                SELECT("*");
+                FROM(tableName);
+                Condition condition = vo.getCondition();
+                if (condition != null) {
+                    List<Condition.Criteria> criteriaList = condition.getOredCriteria();
+                    Condition.Criteria criteria0 = criteriaList.get(0);
+                    List<Condition.Criterion> criterionList = criteria0.getCriteria();
+                    String[] conditions = new String[criterionList.size()];
+                    for (int i = 0; i < criterionList.size(); i++) {
+                        Condition.Criterion criterion = criterionList.get(0);
+                        StringBuilder conditionBuilder = new StringBuilder();
+                        conditionBuilder.append(criterion.getCondition())
+                                .append("'").append(criterion.getValue()).append("'");
+                        if (criterion.getSecondValue() != null) {
+                            conditionBuilder.append(" and '").append(criterion.getSecondValue()).append("'");
+                        }
+                        conditions[i] = conditionBuilder.toString();
+                    }
+                    if (conditions.length > 0) {
+                        WHERE(conditions);
+                    }
+                    String orderBy = condition.getOrderByClause();
+                    if (StringUtils.isNotBlank(orderBy)) {
+                        ORDER_BY(orderBy);
+                    }
+                }
+                Integer offset = vo.getOffset();
+                Integer rows = vo.getRows();
+                if (offset != null && rows != null) {
+                    String limit = offset + "," + rows;
+                    LIMIT(limit);
                 }
             }}.toString();
         }

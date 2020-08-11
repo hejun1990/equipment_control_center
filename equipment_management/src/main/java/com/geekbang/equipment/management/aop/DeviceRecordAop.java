@@ -9,7 +9,7 @@ import com.geekbang.equipment.management.i18n.LanguageEnum;
 import com.geekbang.equipment.management.i18n.ResponseCodeI18n;
 import com.geekbang.equipment.management.model.DeviceRecordTableInfo;
 import com.geekbang.equipment.management.model.TableEntity;
-import com.geekbang.equipment.management.util.BeanHeader;
+import com.geekbang.equipment.management.util.MapperUtil;
 import com.geekbang.equipment.management.util.ThreadPoolFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -295,8 +295,7 @@ public class DeviceRecordAop {
      */
     private void createDeviceRecordTable(String prefixName, String basicComment, String tableName, String tableComment) {
         // 获取Mapper
-        String mapperName = getMapperName(prefixName);
-        TableMapper<?> mapper = BeanHeader.getBean(mapperName);
+        TableMapper<?> mapper = MapperUtil.getMapperBean(prefixName);
         assert mapper != null;
         // 获取建表语句
         Map<String, String> createSqlMap = mapper.getCreateTableInfo(prefixName);
@@ -335,8 +334,8 @@ public class DeviceRecordAop {
             deviceRecordTableConstant.lock.lock();
             try {
                 if (CollectionUtils.isEmpty(deviceRecordTableConstant.getColumns())) {
-                    String mapperName = getMapperName(deviceRecordTableConstant.getPrefixName());
-                    TableMapper<?> mapper = BeanHeader.getBean(mapperName);
+                    // 获取Mapper
+                    TableMapper<?> mapper = MapperUtil.getMapperBean(deviceRecordTableConstant.getPrefixName());
                     assert mapper != null;
                     if (model instanceof TableEntity) {
                         TableEntity tableEntity = (TableEntity) model;
@@ -406,9 +405,8 @@ public class DeviceRecordAop {
                     if (deviceRecordTableInfo.getEndRecordTime() != null) {
                         continue;
                     }
-                    // Mapper类名称
-                    String mapperName = getMapperName(prefixName);
-                    TableMapper<?> mapper = BeanHeader.getBean(mapperName);
+                    // 获取Mapper
+                    TableMapper<?> mapper = MapperUtil.getMapperBean(prefixName);
                     assert mapper != null;
                     // 获取设备上报数据记录表最后一条记录的上报时间
                     Date recordTime = mapper.getLastRecordTime(preTableName);
@@ -423,29 +421,6 @@ public class DeviceRecordAop {
                 platformTransactionManager.rollback(transStatus);
             }
         });
-    }
-
-    /**
-     * 获取Mapper类名称
-     *
-     * @param prefixName 前缀名
-     * @return String
-     */
-    private String getMapperName(final String prefixName) {
-        if (StringUtils.isBlank(prefixName)) {
-            String message = I18nMessageUtil.getMessage(LanguageEnum.LANGUAGE_ZH_CN.getLanguage(),
-                    ResponseCodeI18n.PARAMS_ARE_ERROR.getMsg(), BasicConstant.DEFAULT_ERROR_MESSAGE);
-            throw new RuntimeException(message);
-        }
-        String[] prefixNameBlock = prefixName.split("_");
-        StringBuilder mapperNameBuilder = new StringBuilder(prefixNameBlock[0]);
-        for (int i = 1; i < prefixNameBlock.length; i++) {
-            String block = prefixNameBlock[i];
-            mapperNameBuilder.append(Character.toUpperCase(block.charAt(0)))
-                    .append(block.substring(1));
-        }
-        mapperNameBuilder.append("Mapper");
-        return mapperNameBuilder.toString();
     }
 
     /**
