@@ -1,5 +1,6 @@
 package com.geekbang.equipment.management.service;
 
+import com.geekbang.equipment.management.model.vo.DistributedQueryResultVO;
 import com.geekbang.equipment.management.model.vo.DistributedQueryVO;
 
 import java.util.List;
@@ -17,7 +18,7 @@ public interface DeviceRecordService {
      * 水平分表分页查询
      *
      * @param distributedQueryVO 水平分表分页查询参数
-     * @return List
+     * @return DistributedQueryResultVO
      */
-    List<Map<String, Object>> distributedSelectByCondition(DistributedQueryVO distributedQueryVO);
+    DistributedQueryResultVO distributedSelectByCondition(DistributedQueryVO distributedQueryVO);
 }

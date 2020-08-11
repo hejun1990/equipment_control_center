@@ -8,6 +8,7 @@ import com.geekbang.equipment.management.dao.DeviceSensirionRecordMapper;
 import com.geekbang.equipment.management.i18n.ResponseCodeI18n;
 import com.geekbang.equipment.management.model.DeviceSensirionRecord;
 import com.geekbang.equipment.management.model.vo.DeviceSensirionRecordVO;
+import com.geekbang.equipment.management.model.vo.DistributedQueryResultVO;
 import com.geekbang.equipment.management.model.vo.DistributedQueryVO;
 import com.geekbang.equipment.management.service.DeviceRecordService;
 import com.geekbang.equipment.management.service.DeviceSensirionRecordService;
@@ -18,8 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Condition;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -92,18 +91,6 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
      */
     @Override
     public Result<?> detail(Integer id, String lang) {
-        Condition condition = new Condition(DeviceSensirionRecord.class);
-        Condition.Criteria criteria = condition.createCriteria();
-        criteria.andEqualTo("deviceCode", "004A77012E0B00ED")
-                .andLessThan("battery", 80)
-                .andLike("humidity", "5%")
-                .andBetween("temperature", 30, 60);
-        List<Condition.Criteria> criteriaList = condition.getOredCriteria();
-        Condition.Criteria criteria1 = criteriaList.get(0);
-        List<Condition.Criterion> criterionList = criteria1.getCriteria();
-        for (Condition.Criterion criterion : criterionList) {
-            System.out.println(criterion.getCondition() + "," + criterion.getValue() + "," + criterion.getSecondValue() + "," + criterion.getAndOr() + "," + criterion.getTypeHandler());
-        }
         return null;
     }
 
@@ -132,7 +119,7 @@ public class DeviceSensirionRecordServiceImpl extends AbstractService<DeviceSens
         criteria.andEqualTo("deviceCode", deviceCode);
         condition.setOrderByClause("record_time desc");
         distributedQueryVO.setCondition(condition);
-        List<Map<String, Object>> resultData = deviceRecordService.distributedSelectByCondition(distributedQueryVO);
-        return ResultGenerator.genSuccessResult(resultData);
+        DistributedQueryResultVO result = deviceRecordService.distributedSelectByCondition(distributedQueryVO);
+        return ResultGenerator.genSuccessResult(result);
     }
 }

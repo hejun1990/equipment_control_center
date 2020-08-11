@@ -14,7 +14,11 @@ import org.apache.ibatis.jdbc.SQL;
 import org.springframework.util.CollectionUtils;
 import tk.mybatis.mapper.entity.Condition;
 
+import javax.persistence.Column;
 import javax.persistence.Table;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -167,10 +171,10 @@ public interface TableMapper<T> extends Mapper<T> {
                     List<Condition.Criterion> criterionList = criteria0.getCriteria();
                     String[] conditions = new String[criterionList.size()];
                     for (int i = 0; i < criterionList.size(); i++) {
-                        Condition.Criterion criterion = criterionList.get(0);
+                        Condition.Criterion criterion = criterionList.get(i);
                         StringBuilder conditionBuilder = new StringBuilder();
                         conditionBuilder.append(criterion.getCondition())
-                                .append("'").append(criterion.getValue()).append("'");
+                                .append(" '").append(criterion.getValue()).append("'");
                         if (criterion.getSecondValue() != null) {
                             conditionBuilder.append(" and '").append(criterion.getSecondValue()).append("'");
                         }
@@ -191,19 +195,37 @@ public interface TableMapper<T> extends Mapper<T> {
                 throw new RuntimeException(message);
             }
             return new SQL() {{
-                SELECT("*");
-                FROM(tableName);
                 Condition condition = vo.getCondition();
+                Class entityClass = condition.getEntityClass();
+                Field[] fields = entityClass.getDeclaredFields();
+                List<String> columnList = new ArrayList<>();
+                for (Field field : fields) {
+                    int modifiers = field.getModifiers();
+                    if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers)) {
+                        continue;
+                    }
+                    StringBuilder builder = new StringBuilder();
+                    Column column = field.getDeclaredAnnotation(Column.class);
+                    if (column != null) {
+                        builder.append(column.name()).append(" as ").append(field.getName());
+                    } else {
+                        builder.append(field.getName()).append(" as ").append(field.getName());
+                    }
+                    columnList.add(builder.toString());
+                }
+                String[] columns = new String[columnList.size()];
+                SELECT(columnList.toArray(columns));
+                FROM(tableName);
                 if (condition != null) {
                     List<Condition.Criteria> criteriaList = condition.getOredCriteria();
                     Condition.Criteria criteria0 = criteriaList.get(0);
                     List<Condition.Criterion> criterionList = criteria0.getCriteria();
                     String[] conditions = new String[criterionList.size()];
                     for (int i = 0; i < criterionList.size(); i++) {
-                        Condition.Criterion criterion = criterionList.get(0);
+                        Condition.Criterion criterion = criterionList.get(i);
                         StringBuilder conditionBuilder = new StringBuilder();
                         conditionBuilder.append(criterion.getCondition())
-                                .append("'").append(criterion.getValue()).append("'");
+                                .append(" '").append(criterion.getValue()).append("'");
                         if (criterion.getSecondValue() != null) {
                             conditionBuilder.append(" and '").append(criterion.getSecondValue()).append("'");
                         }

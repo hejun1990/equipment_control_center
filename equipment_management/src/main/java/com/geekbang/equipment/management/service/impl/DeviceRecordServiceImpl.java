@@ -10,13 +10,16 @@ import com.geekbang.equipment.management.i18n.LanguageEnum;
 import com.geekbang.equipment.management.i18n.ResponseCodeI18n;
 import com.geekbang.equipment.management.model.DeviceRecordTableInfo;
 import com.geekbang.equipment.management.model.dto.DeviceRecordQueryDTO;
+import com.geekbang.equipment.management.model.vo.DistributedQueryResultVO;
 import com.geekbang.equipment.management.model.vo.DistributedQueryVO;
 import com.geekbang.equipment.management.service.DeviceRecordService;
 import com.geekbang.equipment.management.util.MapperUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import tk.mybatis.mapper.entity.Condition;
 
@@ -46,10 +49,11 @@ public class DeviceRecordServiceImpl implements DeviceRecordService {
      * 水平分表分页查询
      *
      * @param distributedQueryVO 水平分表分页查询参数
-     * @return List
+     * @return DistributedQueryResultVO
      */
     @Override
-    public List<Map<String, Object>> distributedSelectByCondition(DistributedQueryVO distributedQueryVO) {
+    @Transactional(readOnly = true)
+    public DistributedQueryResultVO distributedSelectByCondition(DistributedQueryVO distributedQueryVO) {
         ParamsCheck.init().notNull(distributedQueryVO, ResponseCodeI18n.PARAMS_ARE_ERROR.getMsg());
         // 分页查询条件
         Condition condition = distributedQueryVO.getCondition();
@@ -71,14 +75,15 @@ public class DeviceRecordServiceImpl implements DeviceRecordService {
             throw new ParamsException(message);
         }
         String prefixName = table.name();
-        List<Map<String, Object>> resultData = new ArrayList<>();
+        DistributedQueryResultVO result = new DistributedQueryResultVO();
+        List<Map<String, Object>> resultList = new ArrayList<>();
         try {
             // 查询设备上报数据记录表表信息
             DeviceRecordTableInfo deviceRecordTableInfoRecord = new DeviceRecordTableInfo();
             deviceRecordTableInfoRecord.setPrefixName(prefixName);
             List<DeviceRecordTableInfo> deviceRecordTableInfoList = deviceRecordTableInfoMapper.select(deviceRecordTableInfoRecord);
             if (CollectionUtils.isEmpty(deviceRecordTableInfoList)) {
-                return null;
+                return result;
             }
             // 通过查询的时间范围确定要查询的表
             if (StringUtils.isNotBlank(queryStartTime)) {
@@ -93,12 +98,27 @@ public class DeviceRecordServiceImpl implements DeviceRecordService {
                 Date endTime = DateUtils.parseDate(queryEndTime, "yyyy-MM-dd HH:mm:ss");
                 // 根据查询结束时间过滤表
                 deviceRecordTableInfoList = deviceRecordTableInfoList.stream()
-                        .filter(deviceRecordTableInfo -> deviceRecordTableInfo.getEndRecordTime() == null
-                                || endTime.compareTo(deviceRecordTableInfo.getEndRecordTime()) >= 0)
+                        .filter(deviceRecordTableInfo -> endTime.compareTo(deviceRecordTableInfo.getStartRecordTime()) >= 0)
                         .collect(Collectors.toList());
             }
             if (CollectionUtils.isEmpty(deviceRecordTableInfoList)) {
-                return null;
+                return result;
+            }
+            // 添加时间段查询条件
+            if (StringUtils.isNotBlank(queryStartTime) || StringUtils.isNotBlank(queryEndTime)) {
+                List<Condition.Criteria> criteriaList = condition.getOredCriteria();
+                Condition.Criteria criteria0 = criteriaList.get(0);
+                if (StringUtils.isNotBlank(queryStartTime)) {
+                    if (StringUtils.isNotBlank(queryEndTime)) {
+                        criteria0.andBetween("recordTime", queryStartTime, queryEndTime);
+                    } else {
+                        criteria0.andGreaterThanOrEqualTo("recordTime", queryStartTime);
+                    }
+                } else {
+                    if (StringUtils.isNotBlank(queryEndTime)) {
+                        criteria0.andLessThanOrEqualTo("recordTime", queryEndTime);
+                    }
+                }
             }
             // 所有记录表按时间倒序排序
             deviceRecordTableInfoList.sort((o1, o2) -> o2.getId() - o1.getId());
@@ -108,6 +128,7 @@ public class DeviceRecordServiceImpl implements DeviceRecordService {
             // 获取Mapper
             TableMapper<?> mapper = MapperUtil.getMapperBean(prefixName);
             assert mapper != null;
+            int totalRows = 0;
             for (DeviceRecordTableInfo deviceRecordTableInfo : deviceRecordTableInfoList) {
                 String tableName = deviceRecordTableInfo.getTableName();
                 int count = mapper.getRecordCountByCondition(tableName, condition);
@@ -122,7 +143,11 @@ public class DeviceRecordServiceImpl implements DeviceRecordService {
                 deviceRecordQueryDTO.setEndOffset(endOffset);
                 deviceRecordQueryDTOS.add(deviceRecordQueryDTO);
                 temporaryOffset = endOffset;
+                totalRows += count;
             }
+            result.setPage(page);
+            result.setRows(rows);
+            result.setTotalRows(totalRows);
             // 全局起始偏移量
             Integer wholeStartOffset = (page - 1) * rows + 1;
             // 全局结束偏移量
@@ -133,28 +158,35 @@ public class DeviceRecordServiceImpl implements DeviceRecordService {
                     .filter(deviceRecordQueryDTO -> wholeEndOffset >= deviceRecordQueryDTO.getStartOffset())
                     .collect(Collectors.toList());
             if (CollectionUtils.isEmpty(deviceRecordQueryDTOS)) {
-                return null;
+                return result;
             }
             for (DeviceRecordQueryDTO deviceRecordQueryDTO : deviceRecordQueryDTOS) {
                 distributedQueryVO.setTableName(deviceRecordQueryDTO.getTableName());
                 int offset = wholeStartOffset - deviceRecordQueryDTO.getStartOffset();
                 distributedQueryVO.setOffset(offset <= 0 ? 0 : offset);
                 List<Map<String, Object>> recordList = mapper.selectRecordByCondition(distributedQueryVO);
-                resultData.addAll(recordList);
+                resultList.addAll(recordList);
             }
-            if (!CollectionUtils.isEmpty(resultData)) {
-                resultData = resultData.stream()
+            if (!CollectionUtils.isEmpty(resultList)) {
+                resultList = resultList.stream()
                         .sorted((o1, o2) -> {
-                            Timestamp recordTime1 = (Timestamp) o1.get("record_time");
-                            Timestamp recordTime2 = (Timestamp) o2.get("record_time");
+                            Timestamp recordTime1 = (Timestamp) o1.get("recordTime");
+                            Timestamp recordTime2 = (Timestamp) o2.get("recordTime");
                             return (int) (recordTime2.getTime() - recordTime1.getTime());
                         })
                         .limit(rows)
                         .collect(Collectors.toList());
+                resultList.forEach(stringObjectMap -> {
+                    if (stringObjectMap.containsKey("recordTime")) {
+                        Timestamp recordTime = (Timestamp) stringObjectMap.get("recordTime");
+                        stringObjectMap.put("recordTime", DateFormatUtils.format(recordTime, "yyyy-MM-dd HH:mm:ss.SSS"));
+                    }
+                });
+                result.setList(resultList);
             }
         } catch (Exception e) {
             log.error("异常", e);
         }
-        return resultData;
+        return result;
     }
 }
