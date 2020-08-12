@@ -14,10 +14,12 @@ import com.geekbang.equipment.management.model.vo.DistributedQueryResultVO;
 import com.geekbang.equipment.management.model.vo.DistributedQueryVO;
 import com.geekbang.equipment.management.service.DeviceRecordService;
 import com.geekbang.equipment.management.util.MapperUtil;
+import com.geekbang.equipment.management.util.ThreadPoolFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -26,11 +28,12 @@ import tk.mybatis.mapper.entity.Condition;
 import javax.annotation.Resource;
 import javax.persistence.Table;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 设备数据上报通用接口
@@ -76,7 +79,6 @@ public class DeviceRecordServiceImpl implements DeviceRecordService {
         }
         String prefixName = table.name();
         DistributedQueryResultVO result = new DistributedQueryResultVO();
-        List<Map<String, Object>> resultList = new ArrayList<>();
         try {
             // 查询设备上报数据记录表表信息
             DeviceRecordTableInfo deviceRecordTableInfoRecord = new DeviceRecordTableInfo();
@@ -122,26 +124,50 @@ public class DeviceRecordServiceImpl implements DeviceRecordService {
             }
             // 所有记录表按时间倒序排序
             deviceRecordTableInfoList.sort((o1, o2) -> o2.getId() - o1.getId());
-            // 查询每个表中的总记录数
-            List<DeviceRecordQueryDTO> deviceRecordQueryDTOS = new ArrayList<>(deviceRecordTableInfoList.size());
-            int temporaryOffset = 0;
             // 获取Mapper
             TableMapper<?> mapper = MapperUtil.getMapperBean(prefixName);
             assert mapper != null;
+
+            // 查询每个表中的总记录数
+            int tableCount = deviceRecordTableInfoList.size();
+            CompletableFuture<DeviceRecordQueryDTO>[] countFutureArray = new CompletableFuture[tableCount];
+            for (int i = 0; i < tableCount; i++) {
+                final DeviceRecordTableInfo deviceRecordTableInfo = deviceRecordTableInfoList.get(i);
+                CompletableFuture<DeviceRecordQueryDTO> future = CompletableFuture.supplyAsync(() -> {
+                    String tableName = deviceRecordTableInfo.getTableName();
+                    int count = mapper.getRecordCountByCondition(tableName, condition);
+                    DeviceRecordQueryDTO deviceRecordQueryDTO = new DeviceRecordQueryDTO();
+                    deviceRecordQueryDTO.setTableName(tableName);
+                    deviceRecordQueryDTO.setCount(count);
+                    deviceRecordQueryDTO.setTableId(deviceRecordTableInfo.getId());
+                    return deviceRecordQueryDTO;
+                }, ThreadPoolFactory.CACHED.getPool());
+                countFutureArray[i] = future;
+            }
+            CompletableFuture<List<DeviceRecordQueryDTO>> countCombineFuture = CompletableFuture.allOf(countFutureArray)
+                    .thenApply(v ->
+                            Stream.of(countFutureArray)
+                                    .map(CompletableFuture::join)
+                                    .collect(Collectors.toList()));
+            List<DeviceRecordQueryDTO> deviceRecordQueryDTOS = countCombineFuture.get();
+            if (CollectionUtils.isEmpty(deviceRecordQueryDTOS)) {
+                return result;
+            }
+            deviceRecordQueryDTOS = deviceRecordQueryDTOS.stream()
+                    .filter(deviceRecordQueryDTO -> deviceRecordQueryDTO.getCount() > 0)
+                    .sorted((o1, o2) -> o2.getTableId() - o1.getTableId())
+                    .collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(deviceRecordQueryDTOS)) {
+                return result;
+            }
+            int temporaryOffset = 0;
             int totalRows = 0;
-            for (DeviceRecordTableInfo deviceRecordTableInfo : deviceRecordTableInfoList) {
-                String tableName = deviceRecordTableInfo.getTableName();
-                int count = mapper.getRecordCountByCondition(tableName, condition);
-                if (count == 0) {
-                    continue;
-                }
+            for (DeviceRecordQueryDTO deviceRecordQueryDTO : deviceRecordQueryDTOS) {
+                int count = deviceRecordQueryDTO.getCount();
                 int startOffset = temporaryOffset + 1;
                 int endOffset = temporaryOffset + count;
-                DeviceRecordQueryDTO deviceRecordQueryDTO = new DeviceRecordQueryDTO();
-                deviceRecordQueryDTO.setTableName(tableName);
                 deviceRecordQueryDTO.setStartOffset(startOffset);
                 deviceRecordQueryDTO.setEndOffset(endOffset);
-                deviceRecordQueryDTOS.add(deviceRecordQueryDTO);
                 temporaryOffset = endOffset;
                 totalRows += count;
             }
@@ -160,13 +186,30 @@ public class DeviceRecordServiceImpl implements DeviceRecordService {
             if (CollectionUtils.isEmpty(deviceRecordQueryDTOS)) {
                 return result;
             }
-            for (DeviceRecordQueryDTO deviceRecordQueryDTO : deviceRecordQueryDTOS) {
-                distributedQueryVO.setTableName(deviceRecordQueryDTO.getTableName());
+
+            // 查询记录数据
+            CompletableFuture<List<Map<String, Object>>>[] listFutureArray = new CompletableFuture[deviceRecordQueryDTOS.size()];
+            for (int i = 0; i < deviceRecordQueryDTOS.size(); i++) {
+                DeviceRecordQueryDTO deviceRecordQueryDTO = deviceRecordQueryDTOS.get(i);
+                DistributedQueryVO queryVO = new DistributedQueryVO();
+                BeanUtils.copyProperties(distributedQueryVO, queryVO);
+                queryVO.setTableName(deviceRecordQueryDTO.getTableName());
                 int offset = wholeStartOffset - deviceRecordQueryDTO.getStartOffset();
-                distributedQueryVO.setOffset(offset <= 0 ? 0 : offset);
-                List<Map<String, Object>> recordList = mapper.selectRecordByCondition(distributedQueryVO);
-                resultList.addAll(recordList);
+                queryVO.setOffset(offset <= 0 ? 0 : offset);
+                CompletableFuture<List<Map<String, Object>>> future = CompletableFuture
+                        .supplyAsync(() -> mapper.selectRecordByCondition(queryVO),
+                                ThreadPoolFactory.CACHED.getPool());
+                listFutureArray[i] = future;
             }
+            CompletableFuture<List<Map<String, Object>>> listCombineFuture = CompletableFuture.allOf(listFutureArray)
+                    .thenApply(v ->
+                            Stream.of(listFutureArray)
+                                    .flatMap(listFuture -> {
+                                        List<Map<String, Object>> maps = listFuture.join();
+                                        return maps.stream();
+                                    })
+                                    .collect(Collectors.toList()));
+            List<Map<String, Object>> resultList = listCombineFuture.get();
             if (!CollectionUtils.isEmpty(resultList)) {
                 resultList = resultList.stream()
                         .sorted((o1, o2) -> {

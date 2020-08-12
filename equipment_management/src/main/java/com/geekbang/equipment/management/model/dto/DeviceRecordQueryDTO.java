@@ -30,4 +30,14 @@ public class DeviceRecordQueryDTO implements Serializable {
      * 结束偏移量
      */
     private Integer endOffset;
+
+    /**
+     * 总数
+     */
+    private Integer count;
+
+    /**
+     * ID
+     */
+    private Integer tableId;
 }
