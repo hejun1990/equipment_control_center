@@ -1,5 +1,6 @@
 package com.geekbang.equipment.management;
 
+import com.geekbang.equipment.management.model.DeviceInfo;
 import com.geekbang.equipment.management.model.vo.DistributedQueryVO;
 import org.jasypt.encryption.StringEncryptor;
 import org.junit.Assert;
@@ -8,6 +9,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import tk.mybatis.mapper.entity.Condition;
 
 import java.util.Optional;
 
@@ -33,14 +35,15 @@ class EquipmentManagementApplicationTests {
 
     @Test
     public void optionalTest() {
-        String a = "2";
-        Integer b = Optional.ofNullable(a).map(s -> Integer.valueOf(s)).orElse(1);
-        Assert.assertTrue(b.equals(2));
         DistributedQueryVO distributedQueryVO = new DistributedQueryVO();
-        String cause = Optional.ofNullable(distributedQueryVO)
+        Condition condition = new Condition(DeviceInfo.class);
+        condition.setOrderByClause("create_time desc");
+        distributedQueryVO.setCondition(condition);
+        String orderBy = Optional.ofNullable(distributedQueryVO)
                 .map(DistributedQueryVO::getCondition)
-                .map(condition -> condition.getOrderByClause())
-                .orElse("123");
-        Assert.assertEquals("123", cause);
+                .map(condition1 -> condition1.getOrderByClause())
+                .orElse("default");
+        System.out.println("orderBy = " + orderBy);
+        Assert.assertEquals("create_time desc", orderBy);
     }
 }
